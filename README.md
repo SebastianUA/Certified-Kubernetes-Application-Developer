@@ -229,6 +229,14 @@ Examples:
 
 ### Understand ConfigMaps
 
+Kubernetes ConfigMap is a built-in Kubernetes API object that’s designed to store your application’s non-sensitive key-value config data. ConfigMaps allow you to keep config values separate from your code and container images. Values can be strings or Base64-encoded binary data.
+
+Once you’ve created a ConfigMap, its content will be saved to your Kubernetes cluster. Pods can then consume the ConfigMap’s values as environment variables, command line arguments, or filesystem volumes.
+
+ConfigMaps are intended to store relatively small amounts of simple data. The total size of a ConfigMap object must be less than 1 MiB. If you need to store more data, you should split your configuration into multiple ConfigMaps or consider using a separate database or key-value store.
+
+It’s good practice to use a ConfigMap to supply any configurable values that your app needs at runtime. The key-value pairs within the ConfigMap can be injected directly into your Pods in several different formats. Because ConfigMaps are part of the Kubernetes API, it’s possible to alter their values without re-deploying your app’s Pods.
+
 Examples:
 - <details><summary>Example_1: Create a new configMap:</summary>
 
@@ -277,7 +285,7 @@ Examples:
     ```
 </details>
 
-- <details><summary>Example_2: Consume data from ConfigMap in Pod as environment variable:</summary>
+- <details><summary>Example_2: Consume data from ConfigMap in Pod as environment variable or mount it as volume:</summary>
 
   In `prod` ns get configmaps and create a new pod with `env-pod-vars` name. The `my-cm` configmap attach as ENV and `my-cm2` another one - as volume. Names, you can use by your choise.
   First of all, gets cms:
@@ -383,6 +391,10 @@ Examples:
 </details>
 
 ### Create & consume Secrets
+
+A Kubernetes secret is an object storing sensitive pieces of data such as usernames, passwords, tokens, and keys. Secrets are created by the system during an app installation or by users whenever they need to store sensitive information and make it available to a pod.
+
+If passwords, tokens, or keys were simply part of a pod definition or container image, they could be accidentally exposed during Kubernetes operations. Therefore, the most important function of the secret is to prevent accidental exposure of the information stored in it while at the same time making it available wherever the user needs it.
 
 Examples:
 - <details><summary>Example_1: Create new secrets:</summary>
@@ -532,6 +544,7 @@ Examples:
 </details>
 
 - <details><summary>Example_4: Get, read, decode secrets:</summary>
+
   Getting secrets:
   ```
   k get secret
