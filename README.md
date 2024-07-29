@@ -239,11 +239,11 @@ Examples:
 
   2. Let's create a new configmap with `my-cm2` name in `prod` namespace:
     ```
-  echo "username=user" >> creds.txt
-  echo "password=password" >> creds.txt
-  echo "host=localhost" >> creds.txt
-  
-  k create cm my-cm2 -n prod --from-file=creds=creds.txt
+    echo "username=user" >> creds.txt
+    echo "password=password" >> creds.txt
+    echo "host=localhost" >> creds.txt
+    
+    k create cm my-cm2 -n prod --from-file=creds=creds.txt
     ```
 
     NOTE: An example, of `creds.txt` file:
@@ -274,7 +274,7 @@ Examples:
     ====
     
     Events:  <none>
-
+    ```
 </details>
 
 - <details><summary>Example_2: Consume data from ConfigMap in Pod as environment variable:</summary>
@@ -326,7 +326,7 @@ Examples:
     dnsPolicy: ClusterFirst
     restartPolicy: Always
   status: {}
-
+  
   ```
 
   Another solution:
@@ -385,13 +385,195 @@ Examples:
 ### Create & consume Secrets
 
 Examples:
-- <details><summary>Example_1: Create a new secret:</summary>
+- <details><summary>Example_1: Create new secrets:</summary>
+
+  Lets create a new secret with `new-secret` name in `default` namespace:
+  ```
+  k create secret generic new-secret --from-literal=user=username --from-literal=password=password
+  ```
+
+  Getting secrets:
+  ```
+  k get secret
+  NAME         TYPE     DATA   AGE
+  new-secret   Opaque   2      17s
+  ```
 
 </details>
 
 - <details><summary>Example_2: Consume secret in Pod as environment variable:</summary>
 
+  Let's create a new pod with `sec-env-var` name to play around with secret and environment variable:
+  ```
+  k run sec-env-var --image=nginx --dry-run=client -o yaml > sec-env-var.yaml
+  ```
+
+  Then, open yaml file and attach secret as environemnt variable:
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: sec-env-var
+    name: sec-env-var
+  spec:
+    containers:
+    - image: nginx
+      name: sec-env-var
+      env:
+      - name: new-secret-username
+        valueFrom:
+          secretKeyRef:
+            name: new-secret
+            key: user
+      resources: {}
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  Or, another solution:
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: sec-env-var
+    name: sec-env-var
+  spec:
+    containers:
+    - image: nginx
+      name: sec-env-var
+      envFrom:
+      - secretRef:
+          name: new-secret
+      resources: {}
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  Apply the yaml:
+  ```
+  k apply -f sec-env-var.yaml
+  ```
+
 </details>
+
+- <details><summary>Example_3: Consume secret in Pod as volume:</summary>
+
+  Let's create a new pod with `sec-volume-var` name to play around with secret and mount it as volume:
+  ```
+  k run sec-volume-var --image=nginx --dry-run=client -o yaml > sec-volume-var.yaml
+  ```
+
+  Then, open yaml file and mount secret as volume. The name you can use by yourself:
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: sec-volume-var
+    name: sec-volume-var
+  spec:
+    volumes:
+    - name: new-secret
+      secret:
+        secretName: new-secret
+    containers:
+    - image: nginx
+      name: sec-volume-var
+      volumeMounts:
+      - name: new-secret
+        mountPath: /etc
+      resources: {}
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  Or, another way:
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: sec-volume-var
+    name: sec-volume-var
+  spec:
+    volumes:
+    - name: new-secret
+      secret:
+        secretName: new-secret
+        items:
+        - key: user
+          path: username
+    containers:
+    - image: nginx
+      name: sec-volume-var
+      volumeMounts:
+      - name: new-secret
+        mountPath: /etc
+      resources: {}
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  Apply the yaml:
+  ```
+  k apply -f sec-volume-var.yaml
+  ```
+
+</details>
+
+- <details><summary>Example_4: Get, read, decode secrets:</summary>
+  Getting secrets:
+  ```
+  k get secret
+  NAME         TYPE     DATA   AGE
+  new-secret   Opaque   2      17s
+  ```
+
+  Let's read secret:
+  ```
+  k get secrets new-secret -o yaml
+
+  apiVersion: v1
+  data:
+    password: cGFzc3dvcmQ=
+    user: dXNlcm5hbWU=
+  kind: Secret
+  metadata:
+    creationTimestamp: "2024-07-29T22:35:30Z"
+    name: new-secret
+    namespace: default
+    resourceVersion: "3384"
+    uid: 2b05cae8-5111-48b3-9876-2ce870670404
+  type: Opaque
+  ```
+
+  Decode it and store secret into file per key, for example:
+  ```
+  k get secrets new-secret -ojsonpath='{.data.user}' | base64 -d > user.txt
+  k get secrets new-secret -ojsonpath='{.data.password}' | base64 -d > password.txt
+  ```
+
+</details>
+
+**Useful official documentation**
+
+- [Configure pod with secret](https://kubernetes.io/docs/concepts/configuration/secret)
+- [Distribute Credentials Securely Using Secrets](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/)
+
+**Useful non-official documentation**
+
+- None
+
 
 ### Understand ServiceAccounts
 
