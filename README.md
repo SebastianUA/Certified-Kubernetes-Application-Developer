@@ -121,6 +121,14 @@ Examples:
 
 </details>
 
+**Useful official documentation**
+
+- None
+
+**Useful non-official documentation**
+
+- None
+
 ### Understand multi-container Pod design patterns (e.g. sidecar, init and others)
 
 Examples:
@@ -128,12 +136,28 @@ Examples:
 
 </details>
 
+**Useful official documentation**
+
+- None
+
+**Useful non-official documentation**
+
+- None
+
 ### Utilize persistent and ephemeral volumes
 
 Examples:
 - <details><summary>Example_1: TBD:</summary>
 
 </details>
+
+**Useful official documentation**
+
+- None
+
+**Useful non-official documentation**
+
+- None
 
 
 ## Application Deployment- 20%
@@ -145,12 +169,28 @@ Examples:
 
 </details>
 
+**Useful official documentation**
+
+- None
+
+**Useful non-official documentation**
+
+- None
+
 ### Understand Deployments and how to perform rolling updates
 
 Examples:
 - <details><summary>Example_1: TBD:</summary>
 
 </details>
+
+**Useful official documentation**
+
+- None
+
+**Useful non-official documentation**
+
+- None
 
 ### Use the Helm package manager to deploy existing packages
 
@@ -159,12 +199,29 @@ Examples:
 
 </details>
 
+**Useful official documentation**
+
+- None
+
+**Useful non-official documentation**
+
+- None
+
 ### Kustomize
 
 Examples:
 - <details><summary>Example_1: TBD:</summary>
 
 </details>
+
+**Useful official documentation**
+
+- None
+
+**Useful non-official documentation**
+
+- None
+
 
 ## Application Observability and Maintenance - 15%
 
@@ -175,12 +232,28 @@ Examples:
 
 </details>
 
+**Useful official documentation**
+
+- None
+
+**Useful non-official documentation**
+
+- None
+
 ### Implement probes and health checks
 
 Examples:
 - <details><summary>Example_1: TBD:</summary>
 
 </details>
+
+**Useful official documentation**
+
+- None
+
+**Useful non-official documentation**
+
+- None
 
 ### Use built-in CLI tools to monitor Kubernetes applications
 
@@ -196,12 +269,28 @@ Examples:
 
 </details>
 
+**Useful official documentation**
+
+- None
+
+**Useful non-official documentation**
+
+- None
+
 ### Debugging in Kubernetes
 
 Examples:
 - <details><summary>Example_1: TBD:</summary>
 
 </details>
+
+**Useful official documentation**
+
+- None
+
+**Useful non-official documentation**
+
+- None
 
 
 ## Application Environment, Configuration and Security - 25%
@@ -213,6 +302,14 @@ Examples:
 
 </details>
 
+**Useful official documentation**
+
+- None
+
+**Useful non-official documentation**
+
+- None
+
 ### Understand authentication, authorization and admission control
 
 Examples:
@@ -220,12 +317,36 @@ Examples:
 
 </details>
 
+**Useful official documentation**
+
+- None
+
+**Useful non-official documentation**
+
+- None
+
 ### Understand requests, limits, quotas
 
 Examples:
-- <details><summary>Example_1: TBD:</summary>
+- <details><summary>Example_1: Setting up resources requests for POD:</summary>
 
 </details>
+
+- <details><summary>Example_2: Setting up resources limits for POD:</summary>
+
+</details>
+
+- <details><summary>Example_3: Setting up resources quotas for POD:</summary>
+
+</details>
+
+**Useful official documentation**
+
+- [Resource Management for Pods and Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
+
+**Useful non-official documentation**
+
+- None
 
 ### Understand ConfigMaps
 
@@ -385,10 +506,43 @@ Examples:
 
 ### Define resource requirements
 
-Examples:
-- <details><summary>Example_1: TBD:</summary>
+Let us try to understand the whole concept in following points :
+- **Understand Resource Limits**: Before we delve into the details of limiting Kubernetes resources, it's crucial to have a clear understanding of what resource limits are and why they are important. Resource limits define the maximum amount of CPU and memory that a container can consume within a Kubernetes cluster. By setting resource limits, you prevent containers from monopolizing resources, ensuring fair allocation and preventing resource exhaustion. When setting resource limits, it's essential to consider the specific requirements of your applications and the available resources in your cluster. By understanding the resource needs of your workloads, you can effectively allocate resources and avoid bottlenecks or performance issues.
+- **Set Resource Requests**: In addition to setting resource limits, it's also crucial to define resource requests for your containers. Resource requests specify the minimum amount of CPU and memory that a container requires to run. Kubernetes uses these requests to schedule containers onto appropriate nodes with sufficient resources. By setting resource requests accurately, you ensure that your containers have the necessary resources to function properly. This helps Kubernetes make informed scheduling decisions and prevents overcommitment of resources.
+- **Utilize Resource Quotas**: To further enforce resource limits and prevent resource abuse, Kubernetes provides resource quotas. Resource quotas allow you to define limits on the total amount of CPU and memory that can be consumed by all containers within a namespace. By utilizing resource quotas, you can ensure that different teams or projects within your cluster have a fair share of resources. This helps prevent resource contention and allows for better resource management and isolation.
+- **Monitor Resource Usage**: Monitoring resource usage is crucial to identify potential bottlenecks, optimize resource allocation, and ensure efficient utilization of your Kubernetes cluster. Kubernetes provides various tools and metrics for monitoring resource usage. By regularly monitoring resource usage, you can identify containers or pods that are consuming excessive resources and take appropriate actions to optimize their resource allocation. This helps maintain the overall health and performance of your cluster.
+- **Implement Resource Limits in Pods**: One of the fundamental ways to limit resources in Kubernetes is by setting resource limits directly in the pod specifications. By specifying resource limits at the pod level, you can control the resource consumption of all containers within the pod. When defining resource limits in pods, it's important to consider the resource requirements of individual containers and ensure that the sum of their limits does not exceed the available resources on the node. This prevents resource contention and ensures optimal resource allocation.
+- **Use Resource Limits in Namespaces**: In addition to setting resource limits at the pod level, Kubernetes allows you to define resource limits at the namespace level. By setting resource limits at the namespace level, you can enforce resource quotas and prevent resource abuse across multiple pods and containers within the namespace. Using resource limits in namespaces provides a higher level of control and allows for better resource management and isolation. It enables you to allocate resources based on different teams, projects, or applications, ensuring fair resource distribution.
+- **Consider Resource Limits for Nodes**: While setting resource limits at the pod and namespace levels is crucial, it's also important to consider resource limits for individual nodes in your Kubernetes cluster. By setting resource limits for nodes, you can prevent resource exhaustion and ensure that no single node becomes overwhelmed with resource-intensive workloads. Considering resource limits for nodes involves monitoring the available resources on each node and setting appropriate limits to prevent overcommitment. This helps maintain the stability and performance of your cluster.
+- **Optimize Resource Allocation**: Optimizing resource allocation is an ongoing process that involves continuously evaluating and adjusting resource limits based on the changing needs of your workloads. By regularly analyzing resource usage patterns and performance metrics, you can identify opportunities to optimize resource allocation. Optimizing resource allocation may involve redistributing resources among pods, adjusting resource limits based on workload demands, or utilizing Kubernetes features like horizontal pod autoscaling to automatically scale resources based on predefined metrics.
+- **Scale Resources as Needed**: Scaling resources is an essential aspect of managing Kubernetes clusters effectively. By scaling resources, you can ensure that your cluster can handle increased workload demands without compromising performance or stability. Scaling resources can be achieved through various techniques, such as horizontal pod autoscaling, vertical pod autoscaling, or cluster autoscaling. These techniques allow you to dynamically adjust resource allocation based on workload demands, ensuring optimal resource utilization.
+- **Regularly Review Resource Usage**: Lastly, it's crucial to regularly review resource usage and make informed decisions based on the insights gained. By periodically analyzing resource usage patterns, you can identify areas for improvement, optimize resource allocation, and prevent resource waste. Regularly reviewing resource usage also helps you stay proactive in managing resource limits, ensuring that your cluster remains efficient and responsive to changing workload demands.
 
-</details>
+
+Limit Kubernetes resources with these top tools:
+- **ResourceQuota**: ResourceQuota is a Kubernetes feature that allows you to set limits on the amount of resources that can be consumed by a namespace or a group of namespaces. With ResourceQuota, you can define limits for CPU, memory, storage, and other resources, preventing any single application or user from monopolizing resources and impacting the performance of other applications. By setting ResourceQuota, you can ensure fair resource allocation and avoid resource contention issues. This helps in maximizing the efficiency of your Kubernetes cluster by preventing resource wastage and ensuring that resources are distributed evenly among applications.
+- **LimitRange**: LimitRange is another useful tool in Kubernetes that allows you to define default resource limits for containers within a namespace. With LimitRange, you can set constraints on CPU, memory, and storage for individual containers, ensuring that they do not exceed the specified limits. By using LimitRange, you can prevent containers from consuming excessive resources, which can lead to performance degradation and resource contention. This tool helps in optimizing resource allocation by enforcing resource limits at the container level, ensuring that each container gets its fair share of resources.
+- **HorizontalPodAutoscaler**: The HorizontalPodAutoscaler (HPA) is a Kubernetes feature that automatically scales the number of pods in a deployment based on CPU utilization or custom metrics. With HPA, you can define target CPU utilization thresholds, and the tool will automatically adjust the number of pods to meet the desired utilization level. By leveraging HPA, you can ensure that your applications always have the necessary resources to handle varying workloads. The tool dynamically scales the number of pods up or down, based on the observed CPU utilization, allowing your applications to scale seamlessly and efficiently.
+- **PodDisruptionBudget**: PodDisruptionBudget (PDB) is a Kubernetes feature that allows you to define policies for the disruption of pods during maintenance or other events. With PDB, you can specify the minimum number of pods that must be available at any given time, ensuring that your applications remain highly available even during disruptions. By setting PDB, you can prevent unnecessary disruptions to your applications and avoid resource wastage. The tool helps in maximizing efficiency by ensuring that the required number of pods are always available, minimizing any potential impact on your applications.
+- **PodPriority**: PodPriority is a Kubernetes feature that allows you to assign priority levels to your pods. With PodPriority, you can specify the importance of different pods, and the Kubernetes scheduler will prioritize the scheduling of higher priority pods over lower priority ones. By leveraging PodPriority, you can ensure that critical pods receive the necessary resources and are scheduled first, maximizing the efficiency of your cluster. This tool helps in optimizing resource allocation by giving priority to important workloads, ensuring that they are not starved of resources.
+- **PodAffinity and PodAntiAffinity**: PodAffinity and PodAntiAffinity are Kubernetes features that allow you to influence the scheduling of pods based on their affinity or anti-affinity with other pods. With PodAffinity, you can specify that a pod should be scheduled on the same node as another pod, while PodAntiAffinity allows you to specify that a pod should not be scheduled on the same node as another pod. By using PodAffinity and PodAntiAffinity, you can optimize resource allocation by co-locating or spreading out pods based on their requirements and dependencies. This helps in maximizing efficiency by minimizing network latency and improving resource utilization.
+- **NodeAffinity**: NodeAffinity is a Kubernetes feature that allows you to influence the scheduling of pods based on the affinity or anti-affinity with specific nodes in the cluster. With NodeAffinity, you can specify that a pod should be scheduled on nodes that satisfy certain criteria, such as having specific labels or taints. By leveraging NodeAffinity, you can optimize resource allocation by ensuring that pods are scheduled on nodes that meet their specific requirements. This helps in maximizing efficiency by distributing pods across the cluster in a way that minimizes resource contention and improves overall performance.
+- **Taints and Tolerations**: Taints and Tolerations are Kubernetes features that allow you to mark nodes with specific taints and specify which pods can tolerate those taints. With taints, you can mark nodes to indicate that they have certain limitations or restrictions, while tolerations allow pods to specify that they can tolerate those taints. By using taints and tolerations, you can optimize resource allocation by ensuring that pods are scheduled on nodes that meet their specific requirements. This helps in maximizing efficiency by preventing pods from being scheduled on nodes that are not suitable for their workload, improving overall performance and resource utilization.
+- **PodSecurityPolicy**: PodSecurityPolicy is a Kubernetes feature that allows you to define security policies for pods. With PodSecurityPolicy, you can specify the security context for pods, including settings such as privilege escalation, volume permissions, and container capabilities. By leveraging PodSecurityPolicy, you can ensure that pods adhere to the specified security policies, minimizing the risk of security vulnerabilities. This tool helps in maximizing efficiency by enforcing security best practices and preventing unauthorized access or malicious activities within your Kubernetes cluster.
+
+**Note**: By default, Kubernetes assume that a pod or container within a pod requires `0.5` CPU and `256Mi` of memory.
+
+Examples:
+  The examples will be in another section of this cource. This is only understanding of resource requirements.
+
+
+**Useful official documentation**
+
+- [Resource Management for Pods and Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
+
+**Useful non-official documentation**
+
+- [Understanding Resource Requirements — Kubernetes](https://ngugijoan.medium.com/understanding-resource-requirements-kubernetes-9bd34245f779)
 
 ### Create & consume Secrets
 
@@ -555,7 +709,7 @@ Examples:
   Let's read secret:
   ```
   k get secrets new-secret -o yaml
-
+  
   apiVersion: v1
   data:
     password: cGFzc3dvcmQ=
@@ -730,13 +884,141 @@ Examples:
 
 </details>
 
+**Useful official documentation**
+
+- None
+
+**Useful non-official documentation**
+
+- None
 
 ### Understand Application Security (SecurityContexts, Capabilities, etc.)
 
 Examples:
-- <details><summary>Example_1: TBD:</summary>
+- <details><summary>Example_1: Working with SecurityContext:</summary>
+
+  Let's create a new POD with image name `redis` and store it into the file to work with:
+  ```
+  k run sec-con-pod --image=redis --dry-run=client -o yaml > sec-con-pod.yaml
+  ```
+
+  Now, let's add some security context into the POD, for example:
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: sec-con-pod
+    name: sec-con-pod
+  spec:
+    containers:
+    - image: redis
+      name: sec-con-pod
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+      resources: {}
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  Another way:
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: sec-con-pod
+    name: sec-con-pod
+  spec:
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+    containers:
+    - image: redis
+      name: sec-con-pod
+      resources: {}
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  Create POD with:
+  ```
+  k apply -f sec-con-pod.yaml
+  ```
+
+  Verification:
+  ```
+  k exec -ti sec-con-pod -- id
+  
+  uid=1000 gid=1000 groups=1000
+  ```
 
 </details>
+
+- <details><summary>Example_2:  Working with Capabilities:</summary>
+
+  Let's create a new POD with image name `redis` and store it into the file to work with:
+  ```
+  k run apa-pod --image=redis --dry-run=client -o yaml > sec-capa-pod.yaml
+  ```
+
+  Now, let's add some security context into the POD, for example:
+  ```
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: sec-capa-pod
+    name: sec-capa-pod
+  spec:
+    containers:
+    - image: redis
+      name: sec-capa-pod
+      resources: {}
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        capabilities:
+          add: ["MAC_ADMIN", "SYS_ADMIN"]
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  Create POD with:
+  ```
+  k apply -f sec-capa-pod.yaml
+  ```
+
+  Verification:
+  ```
+  k exec -ti sec-capa-pod -- id
+  
+  uid=1000 gid=1000 groups=1000
+  ```
+
+  And, can check capabilities:
+  ```
+  k exec -ti sec-capa-pod -- sh -c "cat /proc/1/status | grep Cap"
+  ```
+
+</details>
+
+
+**Useful official documentation**
+
+- [Security context for pods](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/)
+
+**Useful non-official documentation**
+
+- [Kubernetes SecurityContext Capabilities](https://medium.com/@frankpromiseedah/kubernetes-securitycontext-capabilities-b343f859c633)
+- [Kubernetes SecurityContext with practical examples](https://medium.com/marionete/kubernetes-securitycontext-with-practical-examples-67d890558d11)
+
 
 ## Services and Networking - 20%
 
@@ -747,6 +1029,14 @@ Examples:
 
 </details>
 
+**Useful official documentation**
+
+- None
+
+**Useful non-official documentation**
+
+- None
+
 ### Provide and troubleshoot access to applications via services
 
 Examples:
@@ -754,12 +1044,28 @@ Examples:
 
 </details>
 
+**Useful official documentation**
+
+- None
+
+**Useful non-official documentation**
+
+- None
+
 ### Use Ingress rules to expose applications
 
 Examples:
 - <details><summary>Example_1: TBD:</summary>
 
 </details>
+
+**Useful official documentation**
+
+- None
+
+**Useful non-official documentation**
+
+- None
 
 
 # Additional useful material
