@@ -578,10 +578,85 @@ Examples:
 
 </details>
 
+- <details><summary>Example_5: Encripting secret data at REST:</summary>
+
+  Creating folder for this task:
+  ```
+  mkdir -p /etc/kubernetes/enc
+  ```
+
+  Encrypt secret phrase, for example:
+  ```
+  echo -n Secret-ETCD-Encryption | base64
+    U2VjcmV0LUVUQ0QtRW5jcnlwdGlvbg==
+  ```
+
+  Create EncryptionConfiguration `/etc/kubernetes/enc/encryption.yaml` file:
+  ```
+  ---
+  apiVersion: apiserver.config.k8s.io/v1
+  kind: EncryptionConfiguration
+  resources:
+  - resources:
+    - secrets
+    providers:
+    - aesgcm:
+      keys:
+      - name: key1
+        secret: U2VjcmV0LUVUQ0QtRW5jcnlwdGlvbg==
+    - identity: {}
+  ```
+
+  Open `/etc/kubernetes/manifests/kube-apiserver.yaml` file and put `encryption-provider-config` parameter. Also add volume and volumeMount, for example:
+  ```
+  spec:
+    containers:
+    - command:
+      - kube-apiserver
+    ...
+      - --encryption-provider-config=/etc/kubernetes/enc/encryption.yaml
+    ...
+      volumeMounts:
+      - mountPath: /etc/kubernetes/enc
+      name: enc
+      readOnly: true
+    ...
+    hostNetwork: true
+    priorityClassName: system-cluster-critical
+    volumes:
+    - hostPath:
+      path: /etc/kubernetes/enc
+      type: DirectoryOrCreate
+      name: enc
+    ...
+  ```
+  Wait till apiserver was restarted:
+  ```
+  watch crictl ps
+  ```
+
+  When `apiserver` will be re-created, we can encrypt all existing secrets. For example, let's do it fort all secrets in `one1` NS:
+  ```
+  kubectl -n one1 get secrets -o json | kubectl replace -f -
+  ```
+
+  To check you can do for example:
+  ```
+  ETCDCTL_API=3 etcdctl \
+  --cert /etc/kubernetes/pki/apiserver-etcd-client.crt \
+  --key /etc/kubernetes/pki/apiserver-etcd-client.key \
+  --cacert /etc/kubernetes/pki/etcd/ca.crt \
+  get /registry/secrets/one1/s1
+  ```
+
+</details>
+
+
 **Useful official documentation**
 
 - [Configure pod with secret](https://kubernetes.io/docs/concepts/configuration/secret)
 - [Distribute Credentials Securely Using Secrets](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/)
+- [Encrypting Confidential Data at Rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/)
 
 **Useful non-official documentation**
 
@@ -591,9 +666,70 @@ Examples:
 ### Understand ServiceAccounts
 
 Examples:
-- <details><summary>Example_1: TBD:</summary>
+- <details><summary>Example_1: Create service accounts:</summary>
+
+  First of all, let's check SA in `prod` namespace:
+  ```
+  k get sa -n prod
+  ```
+
+  To create a new service account:
+  ```
+  k create sa -n prod my-custom-sa
+  ```
+
+  Create clusterrole/role for our needs:
+  ```
+  k create clusterrole my-custom-role --verb create,delete --resource deployments
+  ```
+
+  Next, let's add some permissions for SA:
+  ```
+  k -n prod create rolebinding my-custom-rb --clusterrole my-custom-role --serviceaccount prod:my-custom-sa
+  ```
+
+  To check, you can use the next command:
+  ```
+  k auth can-i update deployments --as system:serviceaccount:prod:my-custom-sa -n prod
+  k auth can-i list pods --as system:serviceaccount:prod:my-custom-sa -n prod
+  ```
 
 </details>
+
+- <details><summary>Example_2: Working with SA: need to find witch SA uses for web3 PODs in qa namespace and fix/add list & delete for pods and deployments.</summary>
+
+  Getting SA in NS:
+  ```
+  k get sa -n qa
+  NAME           SECRETS   AGE
+  default        0         4m24s
+  my-custom-sa   0         2m30s
+  ```
+
+  Need to find which resource attached into that SA, checking:
+  ```
+  k get rolebindings -n qa -o wide
+  NAME           ROLE                AGE     USERS   GROUPS   SERVICEACCOUNTS
+  my-custom-rb   Role/list-secrets   5m7s                     qa/my-custom-sa
+  smoke          Role/smoke          7m51s   smoke            
+  smoke-view     ClusterRole/view    7m45s   smoke
+  ```
+
+  Gotcha! It's rolebinding with `my-custom-rb` name. That `rb` uses `list-secrets` role. So, need to edit that role and put proper permissions:
+  ```
+  k edit -n qa role ist-secrets
+  ```
+
+  To check, use:
+  ```
+  k auth can-i list deployments --as system:serviceaccount:qa:my-custom-sa -n qa
+  k auth can-i delete deployments --as system:serviceaccount:qa:my-custom-sa -n qa
+  k auth can-i list po --as system:serviceaccount:qa:my-custom-sa -n qa
+  k auth can-i delete po --as system:serviceaccount:qa:my-custom-sa -n qa
+  ```
+
+</details>
+
 
 ### Understand Application Security (SecurityContexts, Capabilities, etc.)
 
@@ -642,7 +778,7 @@ Examples:
 
 ## Videos
 
-1. None
+1. [Kubernetes Certified Application Developer (CKAD) with Tests by Mumshad Mannambeth](https://www.udemy.com/course/certified-kubernetes-application-developer)
 
 
 ## Containers and Kubernetes Security Training
