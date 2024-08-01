@@ -8,21 +8,24 @@ Certified Kubernetes Application Developer (CKAD): Open new career doors – pro
 
 # Certification
 
-- Duration of Exam: **120 minutes**
-- Number of questions: **15-20 hands-on performance-based tasks**
-- Passing score: **66%**
-- Certification validity: **2 years**
-- Cost: **$395 USD**
+- Duration of Exam: **120 minutes**.
+- Number of questions: **15-20 hands-on performance-based tasks**.
+- Passing score: **66%** or above.
+- Certification validity: **2 years**.
+- Cost: **$395 USD**.
 - Exam Eligibility: **12 Month**, with a free retake within this year.
-- Software Version: **Kubernetes v1.29**
+- Software Version: **Kubernetes v1.30**.
 - [The official website with certification](https://training.linuxfoundation.org/certification/certified-kubernetes-application-developer-ckad)
 - [CNCF Exam Curriculum repository](https://github.com/cncf/curriculum/)
-- [Tips & Important Instructions: CKS](https://docs.linuxfoundation.org/tc-docs/certification/tips-cka-and-ckad)
+- [Tips & Important Instructions: CKAD](https://docs.linuxfoundation.org/tc-docs/certification/tips-cka-and-ckad)
 - [Candidate Handbook](https://www.cncf.io/certification/candidate-handbook)
 - [Verify Certification](https://training.linuxfoundation.org/certification/verify/)
 
 
+
 # Structure of certification
+
+
 
 ## Application Design and Build - 20%
 
@@ -117,7 +120,11 @@ Examples:
 ### Choose and use the right workload resource (Deployment, DaemonSet, CronJob, etc.)
 
 Examples:
-- <details><summary>Example_1: TBD:</summary>
+- <details><summary>Example_1: Create Cronjob:</summary>
+
+</details>
+
+- <details><summary>Example_2: Create Job:</summary>
 
 </details>
 
@@ -132,13 +139,53 @@ Examples:
 ### Understand multi-container Pod design patterns (e.g. sidecar, init and others)
 
 Examples:
-- <details><summary>Example_1: TBD:</summary>
+- <details><summary>Example_1: Using sidecar container:</summary>
+
+</details>
+
+- <details><summary>Example_2: Using init container:</summary>
+
+  A Pod can have multiple containers running apps within it, but it can also have one or more init containers, which are run before the app containers are started.
+
+  Init containers are exactly like regular containers, except:
+  - Init containers always run to completion.
+  - Each init container must complete successfully before the next one starts.
+  
+  If a Pod's init container fails, the kubelet repeatedly restarts that init container until it succeeds. However, if the Pod has a restartPolicy of Never, and an init container fails during startup of that Pod, Kubernetes treats the overall Pod as failed.
+
+  To specify an init container for a Pod, add the initContainers field into the Pod specification, as an array of container items (similar to the app containers field and its contents). See Container in the API reference for more details.
+
+  An example of init-container:
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: myapp-pod
+    labels:
+      app: myapp
+  spec:
+    containers:
+    - name: myapp-container
+      image: busybox:1.28
+      command: ['sh', '-c', 'echo The app is running! && sleep 3600']
+    initContainers:
+    - name: init-myservice
+      image: busybox:1.28
+      command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
+    - name: init-mydb
+      image: busybox:1.28
+      command: ['sh', '-c', 'until nslookup mydb; do echo waiting for mydb; sleep 2; done;']
+  ```
+
+</details>
+
+- <details><summary>Example_3: Using adapter container:</summary>
 
 </details>
 
 **Useful official documentation**
 
-- None
+- [Init Containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers)
 
 **Useful non-official documentation**
 
@@ -147,13 +194,34 @@ Examples:
 ### Utilize persistent and ephemeral volumes
 
 Examples:
-- <details><summary>Example_1: TBD:</summary>
+- <details><summary>Example_1: Working with storageClass:</summary>
+
+  Get storage classes:
+  ```
+  k get sc
+  ```
+
+  Create a new storageClass, for example with `local-storage` name:
+  ```
+  apiVersion: storage.k8s.io/v1
+  kind: StorageClass
+  metadata:
+    name: local-storage
+  provisioner: kubernetes.io/no-provisioner
+  volumeBindingMode: WaitForFirstConsumer
+  ```
+
+</details>
+
+- <details><summary>Example_2: Working with PV and PVC:</summary>
 
 </details>
 
 **Useful official documentation**
 
-- None
+- [Storage Classes in Kubernetes](https://kubernetes.io/docs/concepts/storage/storage-classes/)
+- [Ephemeral Volumes in Kubernetes](https://kubernetes.io/docs/concepts/storage/ephemeral-volumes/)
+- [Persistent Volumes in Kubernetes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
 
 **Useful non-official documentation**
 
@@ -165,7 +233,11 @@ Examples:
 ### Use Kubernetes primitives to implement common deployment strategies (e.g. blue/green or canary)
 
 Examples:
-- <details><summary>Example_1: TBD:</summary>
+- <details><summary>Example_1: Using Blue/Green deployment:</summary>
+
+</details>
+
+- <details><summary>Example_2: Using Canary deployment:</summary>
 
 </details>
 
@@ -180,7 +252,61 @@ Examples:
 ### Understand Deployments and how to perform rolling updates
 
 Examples:
-- <details><summary>Example_1: TBD:</summary>
+- <details><summary>Example_1: Using rolling updates:</summary>
+
+  1. Make changes in YAML file and run:
+    ```
+    k apply -f deploy-definition.yaml
+    ```
+  2. Update only needed param, for example - `image` only:
+    ```
+    k set image deployment/my-deploy-1 nginx-container=nginx:1.19
+    ```
+
+    Where:
+    - `my-deploy-1` - The deployment name.
+    - `nginx-container` - The container name.
+    - `nginx:1.19` - The needed image name with tag.
+
+  Let's create a new deployment:
+  ```
+  kubectl create deployment my-deploy-1 --image=nginx:1.17
+  ```
+
+  Let's update image:
+  ```
+  kubectl set image deployment my-deploy-1 nginx=nginx:1.18
+  ```
+
+
+  Getting events from deployment:
+  ```
+  k describe deploy my-deploy-1
+  ```
+
+</details>
+
+- <details><summary>Example_2: Using rollbacks:</summary>
+
+  Rollout command:
+  ```
+  k rollout status deployment/my-deploy-1
+  ```
+
+  To get history of rollouts:
+  ```
+  k rollout history deployment/my-deploy-1
+  ```
+
+  Make rollout:
+  ```
+  k rollout undo deployment/my-deploy-1
+  ```
+
+  Or:
+  ```
+  kubectl rollout undo deployment my-deploy-1 --to-revision=1
+  ```
 
 </details>
 
@@ -195,7 +321,11 @@ Examples:
 ### Use the Helm package manager to deploy existing packages
 
 Examples:
-- <details><summary>Example_1: TBD:</summary>
+- <details><summary>Example_1: Install helm on the host:</summary>
+
+</details>
+
+- <details><summary>Example_2: Using helm:</summary>
 
 </details>
 
@@ -228,13 +358,39 @@ Examples:
 ### Understand API deprecations
 
 Examples:
-- <details><summary>Example_1: TBD:</summary>
+- <details><summary>Example_1: Find and fix deprecations API in PODs/Deployments:</summary>
+
+  Get API version of deploy:
+  ```
+  k explain deploy
+  ```
+
+  Get API version of POD:
+  ```
+  k explain pod
+  ```
+
+  Or, better one:
+  ```
+  kubectl api-resources
+  ```
+
+</details>
+
+- <details><summary>Example_2: Enabling/Disabling API Groups in Kubernetes:</summary>
+
+  Adding str inside `/etc/kubernetes/manifests/kube-apiserver.yaml`:
+  ```
+  ....
+  --runtime-config=batch/v2alpha1
+  ....
+  ```
 
 </details>
 
 **Useful official documentation**
 
-- None
+- [The Kubernetes API](https://kubernetes.io/docs/concepts/overview/kubernetes-api/)
 
 **Useful non-official documentation**
 
@@ -242,14 +398,36 @@ Examples:
 
 ### Implement probes and health checks
 
+A common pattern for liveness probes is to use the same low-cost HTTP endpoint as for readiness probes, but with a higher failureThreshold. This ensures that the pod is observed as not-ready for some period of time before it is hard killed.
+
+The kubelet uses readiness probes to know when a container is ready to start accepting traffic. A Pod is considered ready when all of its containers are ready. One use of this signal is to control which Pods are used as backends for Services. When a Pod is not ready, it is removed from Service load balancers.
+
+The kubelet uses startup probes to know when a container application has started. If such a probe is configured, liveness and readiness probes do not start until it succeeds, making sure those probes don't interfere with the application startup. This can be used to adopt liveness checks on slow starting containers, avoiding them getting killed by the kubelet before they are up and running.
+
 Examples:
-- <details><summary>Example_1: TBD:</summary>
+- <details><summary>Example_1: Create readiness probes:</summary>
+
+</details>
+
+- <details><summary>Example_2: Create liveness probes:</summary>
+
+</details>
+
+- <details><summary>Example_3: Create startup probes:</summary>
+
+</details>
+
+- <details><summary>Example_4: Create a health check with http/https:</summary>
+
+</details>
+
+- <details><summary>Example_5: Create a health check with exec</summary>
 
 </details>
 
 **Useful official documentation**
 
-- None
+- [Configure Liveness, Readiness and Startup Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
 
 **Useful non-official documentation**
 
@@ -257,8 +435,39 @@ Examples:
 
 ### Use built-in CLI tools to monitor Kubernetes applications
 
+For certification, only needs - `metrics server`. Metrics Server is a scalable, efficient source of container resource metrics for Kubernetes built-in autoscaling pipelines. Metrics Server collects resource metrics from Kubelets and exposes them in Kubernetes apiserver through Metrics API for use by Horizontal Pod Autoscaler and Vertical Pod Autoscaler.
+
+
 Examples:
-- <details><summary>Example_1: TBD:</summary>
+- <details><summary>Example_1: Install metrics server:</summary>
+
+  To install `metrics-server`, use:
+  ```
+  kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+  ```
+
+  Simple check:
+  ```
+  kubectl get --raw /apis/metrics.k8s.io/v1beta1/nodes
+  ```
+
+</details>
+
+- <details><summary>Example_2: Get node metrics:</summary>
+
+  If you want to get CPU & Mem usage on nodes:
+  ```
+  k top node
+  ```
+
+</details>
+
+- <details><summary>Example_3: Get POD metrics:</summary>
+
+  If you want to get CPU & Mem usage on PODs:
+  ```
+  k top pod
+  ```
 
 </details>
 
@@ -297,8 +506,103 @@ Examples:
 
 ### Discover and use resources that extend Kubernetes (CRD, Operators)
 
+A custom resource is an object that extends the Kubernetes API or allows you to introduce your own API into a project or a cluster. A custom resource definition (CRD) file defines your own object kinds and lets the API Server handle the entire lifecycle.
+
 Examples:
-- <details><summary>Example_1: TBD:</summary>
+- <details><summary>Example_1: Using Custom Resource Definition (CRD):</summary>
+
+</details>
+
+**Useful official documentation**
+
+- [Custom Resources in Kubernetes](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)
+
+**Useful non-official documentation**
+
+- None
+
+### Understand authentication, authorization and admission controllers
+
+To access and manage any Kubernetes resource or object in the cluster, we need to access a specific API endpoint on the API server. Each access request goes through the following three stages:
+
+**1. Authentication** - Logs in a user.
+
+Kubernetes does not have an object called user, nor does it store usernames or other related details in its object store. However, even without that, Kubernetes can use usernames for access control and request logging.
+
+Kubernetes has two kinds of users:
+
+- **Normal Users** They are managed outside of the Kubernetes cluster via independent services like User/Client Certificates, a file listing usernames/passwords, Google accounts, etc.
+- **Service Accounts** With Service Account users, in-cluster processes communicate with the API server to perform different operations. Most of the Service Account users are created automatically via the API server, but they can also be created manually. The Service Account users are tied to a given Namespace and mount the respective credentials to communicate with the API server as Secrets.
+
+For authentication, Kubernetes uses different authentication modules:
+
+- **Client Certificates** To enable client certificate authentication, we need to reference a file containing one or more certificate authorities by passing the `--client-ca-file=SOMEFILE` option to the API server. The certificate authorities mentioned in the file would validate the client certificates presented to the API server. A demonstration video covering this topic is also available at the end of this chapter.
+- **Static Token File** We can pass a file containing pre-defined bearer tokens with the `--token-auth-file=SOMEFILE` option to the API server. Currently, these tokens would last indefinitely, and they cannot be changed without restarting the API server.
+- **Bootstrap Tokens** This feature is currently in beta status and is mostly used for bootstrapping a new Kubernetes cluster.
+- **Static Password File** It is similar to Static Token File. We can pass a file containing basic authentication details with the `--basic-auth-file=SOMEFILE` option. These credentials would last indefinitely, and passwords cannot be changed without restarting the API server.
+- **Service Account Tokens** This is an automatically enabled authenticator that uses signed bearer tokens to verify the requests. These tokens get attached to Pods using the ServiceAccount Admission Controller, which allows in-cluster processes to talk to the API server.
+- **OpenID Connect Tokens** OpenID Connect helps us connect with OAuth2 providers, such as Azure Active Directory, Salesforce, Google, etc., to offload the authentication to external services.
+- **Webhook Token Authentication** With Webhook-based authentication, verification of bearer tokens can be offloaded to a remote service.
+- **Authenticating Proxy** If we want to program additional authentication logic, we can use an authenticating proxy.
+
+**2. Authorization** - Authorizes the API requests added by the logged-in user.
+
+After a successful authentication, users can send the API requests to perform different operations. Then, those API requests get authorized by Kubernetes using various authorization modules:
+
+- Node Authorizer
+- Attribute-Based Access Control (ABAC) Authorizer
+- Webhook Authorizer
+- Role-Based Access Control (RBAC) Authorizer
+
+**Role** - With Role, we can grant access to resources within a specific Namespace.
+**ClusterRole** - The ClusterRole can be used to grant the same permissions as Role does, but its scope is cluster-wide.
+
+**RoleBinding** - It allows us to bind users to the same namespace as a Role. We could also refer a ClusterRole in RoleBinding, which would grant permissions to Namespace resources defined in the ClusterRole within the RoleBinding’s Namespace.
+**ClusterRoleBinding**- It allows us to grant access to resources at a cluster-level and to all Namespaces.
+
+**3. Admission Control** - Software modules that can modify or reject the requests based on some additional checks, like a pre-set Quota. Admission control is used to specify granular access control policies, which include allowing privileged containers, checking on resource quota, etc. To use admission controls, we must start the Kubernetes API server with the `--enable-admission-plugins`, which takes a comma-delimited, ordered list of controller names: `--enable-admission-plugins=NamespaceLifecycle,ResourceQuota,PodSecurityPolicy,DefaultStorageClass`.
+
+Examples:
+- <details><summary>Example_1: Using kubeconfig file to work with Kubernetes:</summary>
+
+  To view Kubernetes config:
+  ```
+  k config view
+  ```
+
+</details>
+
+- <details><summary>Example_2: Using Authorication mode in Kubernetes API server:</summary>
+
+  Checking which auth-mode kube-apiserver uses:
+  ```
+  cat /etc/kubernetes/manifests/kube-apiserver.yaml | grep -Ei "authorization-mode"
+    - --authorization-mode=Node,RBAC
+  ```
+  
+  NOTE: Possible to use: `AlwaysAllow`, `NODE`, `ABAC`, `RBAC`, `Webhook`, `AlwaysDeny`.
+
+</details>
+
+- <details><summary>Example_3: Using RBAC to work with Kubernetes:</summary>
+
+  To view roles in Kubernetes:
+  ```
+  k get roles
+  ```
+
+  To view cluster roles in Kubernetes:
+  ```
+  k get clusterrole
+  ```
+
+  TBD - add role + rolebinging create
+
+</details>
+
+- <details><summary>Example_4: Using Admission controllers in Kubernetes:</summary>
+
+  TBD
 
 </details>
 
@@ -308,22 +612,7 @@ Examples:
 
 **Useful non-official documentation**
 
-- None
-
-### Understand authentication, authorization and admission control
-
-Examples:
-- <details><summary>Example_1: TBD:</summary>
-
-</details>
-
-**Useful official documentation**
-
-- None
-
-**Useful non-official documentation**
-
-- None
+- [Kubernetes Access Control with Authentication, Authorization & Admission Control](https://blog.kubesimplify.com/kubernetes-access-control-with-authentication-authorization-admission-control)
 
 ### Understand requests, limits, quotas
 
@@ -343,6 +632,7 @@ Examples:
 **Useful official documentation**
 
 - [Resource Management for Pods and Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
+- [Resource Quotas in Kubernetes](https://kubernetes.io/docs/concepts/policy/resource-quotas/)
 
 **Useful non-official documentation**
 
@@ -732,7 +1022,7 @@ Examples:
 
 </details>
 
-- <details><summary>Example_5: Encripting secret data at REST:</summary>
+- <details><summary>Example_5: Encrypting secret data at REST:</summary>
 
   Creating folder for this task:
   ```
@@ -1040,7 +1330,15 @@ Examples:
 ### Provide and troubleshoot access to applications via services
 
 Examples:
-- <details><summary>Example_1: TBD:</summary>
+- <details><summary>Example_1: Service with NodePort:</summary>
+
+</details>
+
+- <details><summary>Example_1: Service with ClusterIP:</summary>
+
+</details>
+
+- <details><summary>Example_1: Service with LoadBalancer:</summary>
 
 </details>
 
@@ -1055,7 +1353,11 @@ Examples:
 ### Use Ingress rules to expose applications
 
 Examples:
-- <details><summary>Example_1: TBD:</summary>
+- <details><summary>Example_1: Create Ingress with Nginx:</summary>
+
+</details>
+
+- <details><summary>Example_2: Create Ingress with Traefic:</summary>
 
 </details>
 
@@ -1066,6 +1368,7 @@ Examples:
 **Useful non-official documentation**
 
 - None
+
 
 
 # Additional useful material
@@ -1087,9 +1390,9 @@ Examples:
 1. [Kubernetes Certified Application Developer (CKAD) with Tests by Mumshad Mannambeth](https://www.udemy.com/course/certified-kubernetes-application-developer)
 
 
-## Containers and Kubernetes Security Training
+## Containers and Kubernetes Application Developer
 
-1. [Killer.sh CKS practice exam](https://killer.sh/ckad)
+1. [Killer.sh CKAD practice exam](https://killer.sh/ckad)
 2. [Killer Shell CKAD - Interactive Scenarios for Kubernetes Application Developers](https://killercoda.com/killer-shell-ckad)
 3. [Kodekloud playground](https://uklabs.kodekloud.com/courses/labs-certified-kubernetes-application-developer)
 
