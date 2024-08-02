@@ -22,10 +22,7 @@ Certified Kubernetes Application Developer (CKAD): Open new career doors – pro
 - [Verify Certification](https://training.linuxfoundation.org/certification/verify/)
 
 
-
 # Structure of certification
-
-
 
 ## Application Design and Build - 20%
 
@@ -116,7 +113,6 @@ Examples:
 - [Docker documentation](https://docs.docker.com/build)
 - [Podman documentation](https://docs.podman.io/en/latest/Introduction.html)
 
-
 ### Choose and use the right workload resource (Deployment, DaemonSet, CronJob, etc.)
 
 Examples:
@@ -140,6 +136,57 @@ Examples:
 
 Examples:
 - <details><summary>Example_1: Using sidecar container:</summary>
+
+  Sidecar containers are the secondary containers that run along with the main application container within the same Pod. These containers are used to enhance or to extend the functionality of the primary app container by providing additional services, or functionality such as logging, monitoring, security, or data synchronization, without directly altering the primary application code. Typically, you only have one app container in a Pod. For example, if you have a web application that requires a local webserver, the local webserver is a sidecar and the web application itself is the app container.
+
+
+  An example with sidecar container:
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: pod-with-sidecar
+  spec:
+    # Create a volume called 'shared-logs' that the
+    # app and sidecar share.
+    volumes:
+    - name: shared-logs 
+      emptyDir: {}
+
+    # In the sidecar pattern, there is a main application
+    # container and a sidecar container.
+    containers:
+
+    # Main application container
+    - name: app-container
+      # Simple application: write the current date
+      # to the log file every five seconds
+      image: alpine # alpine is a simple Linux OS image
+      command: ["/bin/sh"]
+      args: ["-c", "while true; do date >> /var/log/app.txt; sleep 5;done"]
+
+      # Mount the pod's shared log file into the app 
+      # container. The app writes logs here.
+      volumeMounts:
+      - name: shared-logs
+        mountPath: /var/log
+
+    # Sidecar container
+    - name: sidecar-container
+      # Simple sidecar: display log files using nginx.
+      # In reality, this sidecar would be a custom image
+      # that uploads logs to a third-party or storage service.
+      image: nginx:1.7.9
+      ports:
+        - containerPort: 80
+
+      # Mount the pod's shared log file into the sidecar
+      # container. In this case, nginx will serve the files
+      # in this directory.
+      volumeMounts:
+      - name: shared-logs
+        mountPath: /usr/share/nginx/html # nginx-specific mount path
+  ```
 
 </details>
 
@@ -181,15 +228,57 @@ Examples:
 
 - <details><summary>Example_3: Using adapter container:</summary>
 
+  At its core, the Adapter Container pattern involves deploying an additional container within the same pod as your main application container. This secondary container acts as an intermediary, adapting or modifying data or communication between your main application and external systems. The main goal is to ensure seamless integration without burdening your main application with protocol translation, data format conversion, or encryption.
+
+  The Adapter Container pattern offers several advantages:
+  - Modularity: Your main application stays focused on its core functionality while the adapter container takes care of data adaptation and encryption. This separation of concerns enhances code maintainability.
+  - Reusability: The adapter container can be reused across multiple pods or services that require similar data transformation or encryption. It promotes code reuse and consistency.
+  - Simplicity: Your main application doesn't need to deal with the complexities of data format conversion or TLS encryption. This simplifies the codebase and makes it more manageable.
+  - Security: TLS encryption is crucial for secure data transmission. By centralizing encryption within the adapter container, you ensure that data is always encrypted before leaving your application.
+
+  An example with adapter container:
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: webserver-1
+    labels:
+      app: webserver
+  spec:
+    volumes:
+      - name: nginx-conf
+        configMap:
+          name: nginx-conf
+          items:
+            - key: default.conf
+              path: default.conf
+    containers:
+      - name: webserver
+        image: nginx
+        ports:
+          - containerPort: 80
+        volumeMounts:
+          - mountPath: /etc/nginx/conf.d
+            name: nginx-conf
+            readOnly: true
+      - name: adapter
+        image: nginx/nginx-prometheus-exporter:0.4.2
+        args: ["-nginx.scrape-uri","http://localhost/nginx_status"]
+        ports:
+          - containerPort: 9113
+  ```
+
 </details>
 
 **Useful official documentation**
 
 - [Init Containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers)
+- [Sidecar Containers](https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/)
 
 **Useful non-official documentation**
 
-- None
+- [Kubernetes Multi Container Pod patterns - Adapter Container Pattern](https://navyadevops.hashnode.dev/kubernetes-multi-container-pod-patterns-adapter-container-pattern)
+- [Kubernetes Sidecar Container - Best Practices and Examples](https://www.atatus.com/blog/kubernetes-sidecar-container-best-practices-and-examples/#what-is-a-sidecar-container)
 
 ### Utilize persistent and ephemeral volumes
 
@@ -215,6 +304,16 @@ Examples:
 
 - <details><summary>Example_2: Working with PV and PVC:</summary>
 
+  To get PV in `qa` namespace:
+  ```
+  k get pv -n qa
+  ```
+
+  To get PVC in `qa` namespace:
+  ```
+  k get pvc -n qa
+  ```
+
 </details>
 
 **Useful official documentation**
@@ -228,7 +327,7 @@ Examples:
 - None
 
 
-## Application Deployment- 20%
+## Application Deployment - 20%
 
 ### Use Kubernetes primitives to implement common deployment strategies (e.g. blue/green or canary)
 
@@ -277,7 +376,6 @@ Examples:
   ```
   kubectl set image deployment my-deploy-1 nginx=nginx:1.18
   ```
-
 
   Getting events from deployment:
   ```
@@ -351,7 +449,6 @@ Examples:
 **Useful non-official documentation**
 
 - None
-
 
 ## Application Observability and Maintenance - 15%
 
@@ -793,7 +890,6 @@ Examples:
 
 - None
 
-
 ### Define resource requirements
 
 Let us try to understand the whole concept in following points :
@@ -1106,7 +1202,6 @@ Examples:
 
 - None
 
-
 ### Understand ServiceAccounts
 
 Examples:
@@ -1368,7 +1463,6 @@ Examples:
 **Useful non-official documentation**
 
 - None
-
 
 
 # Additional useful material
