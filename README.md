@@ -116,11 +116,79 @@ Examples:
 ### Choose and use the right workload resource (Deployment, DaemonSet, CronJob, etc.)
 
 Examples:
-- <details><summary>Example_1: Create Cronjob:</summary>
+- <details><summary>Example_1: Working with Cronjob:</summary>
 
 </details>
 
-- <details><summary>Example_2: Create Job:</summary>
+- <details><summary>Example_2: Working with Job:</summary>
+
+</details>
+
+- <details><summary>Example_3: Working with DaemonSet:</summary>
+
+  To get DaemonSet, for example in `prod` namespace:
+  ```
+  k get deamonset -n prod
+  ```
+
+  Edit and update the definition of one or more daemonset:
+  ```
+  k edit ds <deamonset_name>
+  ```
+
+  Delete a daemonset:
+  ```
+  k delete deamonset <deamonset_name>
+  ```
+
+  Create a new daemonset:
+  ```
+  k create deamonset <deamonset_name>
+  ```
+
+  Manage the rollout of a daemonset:
+  ```
+  k rollout daemonset
+  ```
+
+  Display the detailed state of daemonsets within a namespace:
+  ```
+  k describe ds <deamonset_name> -n <namespace_name>
+  ```
+
+</details>
+
+- <details><summary>Example_2: Working with Deployment:</summary>
+
+  To get Deployment, for example in `prod` namespace:
+  ```
+  k get deployment -n prod
+  ```
+
+  Display the detailed state of deploy within a namespace:
+  ```
+  k describe deploy <deployment_name> -n <namespace_name>
+  ```
+
+  Edit and update the definition of one or more deploy:
+  ```
+  k edit deploy <deployment_name>
+  ```
+
+  Delete a deploy:
+  ```
+  k delete deploy <deployment_name> -n <namespace_name>
+  ```
+
+  Create one a new deployment:
+  ```
+  k create deploy <deployment_name>
+  ```
+
+  See the rollout status of a deployment:
+  ```
+  k rollout status deployment <deployment_name> -n <namespace_name>
+  ```
 
 </details>
 
@@ -716,13 +784,199 @@ Examples:
 Examples:
 - <details><summary>Example_1: Setting up resources requests for POD:</summary>
 
+  Let's create a new POD with `res-req-pod` name with `nginx` image:
+  ```
+  k run res-req-pod --image=nginx --dry-run=client -o yaml > res-req-pod.yaml
+  ```
+
+  Open the `` file and set up requests as `128Mi` memory and as `128m` cpu:
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: res-req-pod
+    name: res-req-pod
+  spec:
+    containers:
+    - image: nginx
+      name: res-req-pod
+      resources:
+        requests:
+          memory: "128Mi"
+          cpu: "128m"
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  NOTE: By your needs, you can set `limits` as well!
+
+  Checking pod:
+  ```
+  k get po res-req-pod
+  ```
+
 </details>
 
 - <details><summary>Example_2: Setting up resources limits for POD:</summary>
 
+  Let's create a new POD with `res-lim-pod` name with `nginx` image:
+  ```
+  k run res-lim-pod --image=nginx --dry-run=client -o yaml > res-lim-pod.yaml
+  ```
+
+  Open the `` file and set up limits as `128Mi` memory and as `128m` cpu:
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: res-lim-pod
+    name: res-lim-pod
+  spec:
+    containers:
+    - image: nginx
+      name: res-lim-pod
+      resources:
+        limits:
+          memory: "128Mi"
+          cpu: "128m"
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  NOTE: By your needs, you can set `requests` as well!
+
+  Checking pod:
+  ```
+  k get po res-lim-pod
+  ```
+
 </details>
 
 - <details><summary>Example_3: Setting up resources quotas for POD:</summary>
+
+  To play around with quotas, let's create namespace with `quotas-ns` name:
+  ```
+  k create ns quotas-ns
+  ```
+
+  Create quotas with `quotas-ns` name for that created NS:
+  ```
+  apiVersion: v1
+  kind: ResourceQuota
+  metadata:
+    name: quotas-ns
+    namespace: quotas-ns
+  spec:
+    hard:
+      requests.cpu: "1"
+      requests.memory: 1Gi
+      limits.cpu: "2"
+      limits.memory: 2Gi
+  ```
+
+  Apply the file:
+  ```
+  k apply -f quotas-ns.yaml
+  ```
+
+  Now, create POD/deploy to verify how it working:
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: quota-demo
+    namespace: quotas-ns
+  spec:
+    containers:
+    - name: quota-demo-ctr
+      image: nginx
+      resources:
+        limits:
+          memory: "800Mi"
+          cpu: "800m"
+        requests:
+          memory: "600Mi"
+          cpu: "400m"
+  ```
+
+  Apply it:
+  ```
+  k apply -f quota-demo.yaml
+  ```
+
+  To check quota stats:
+  ```
+  k get resourcequotas -n quotas-ns -o yaml
+  ```
+
+  Or, one more example:
+  ```
+  k get resourcequotas quotas-ns -n quotas-ns  -o jsonpath='{ .status.used }' | jq -r '.'
+  k get resourcequotas quotas-ns -n quotas-ns  -o jsonpath='{ .status.hard }' | jq -r '.'
+  ```
+
+</details>
+
+- <details><summary>Example_4: Setting up limitrange:</summary>
+
+  Create a new NS:
+  ```
+  kubectl create ns limitrange
+  ```
+
+  Next, create a file with `ns-memory-limit.yaml` name and put the next content:
+  ```
+  apiVersion: v1
+  kind: LimitRange
+  metadata:
+    name: ns-memory-limit
+    namespace: one
+  spec:
+    limits:
+    - max: # max and min define the limit range
+        memory: "500Mi"
+      min:
+        memory: "100Mi"
+      type: Container
+  ```
+
+  Apply the file:
+  ```
+  kubectl apply -f ns-memory-limit.yaml
+  ```
+
+  Create an nginx pod that requests 250Mi of memory in the limitrange namespace:
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: nginx
+    name: nginx
+    namespace: one
+  spec:
+    containers:
+    - image: nginx
+      name: nginx
+      resources:
+        requests:
+          memory: "250Mi"
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  Apply nginx pod:
+  ```
+  kubectl apply -f nginx.yaml
+  ```
 
 </details>
 
@@ -1269,6 +1523,40 @@ Examples:
 
 </details>
 
+- <details><summary>Example_3: Using service account with POD/Deployment:</summary>
+
+  Cretae a pod with `ipod` name and with image `nginx` name:
+  ```
+  k run ipod --image=nginx --dry-run=client -o yaml > ipod.yaml
+  ```
+
+  Add service account with `i-service-account` name:
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: ipod
+    name: ipod
+  spec:
+    serviceAccountName: i-service-account
+    containers:
+    - image: nginx
+      name: ipod
+      resources: {}
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  Deploy pod:
+  ```
+  k apply -f ipod.yaml
+  ```
+
+</details>
+
 **Useful official documentation**
 
 - None
@@ -1427,19 +1715,68 @@ Examples:
 Examples:
 - <details><summary>Example_1: Service with NodePort:</summary>
 
+  Creating a new POD:
+  ```
+  k run redis --image=redis:alpine -ltier=db
+  ```
+
+  Now, create a `redis-service` service to expose the redis application within the cluster on port `6379`:
+  ```
+  k expose pod redis --port=6379 --name redis-service
+  ```
+
 </details>
 
 - <details><summary>Example_1: Service with ClusterIP:</summary>
+
+  Create a pod called `httpd` using the `httpd:alpine` image in the default namespace. Next, create a `service` of type `ClusterIP` by the same name (httpd). The target port for the service should be `80`:
+  ```
+  kubectl run httpd --image=httpd:alpine --port=80 --expose
+  ```
 
 </details>
 
 - <details><summary>Example_1: Service with LoadBalancer:</summary>
 
+  Creating a new POD:
+  ```
+  k run redis --image=redis:alpine -ltier=db
+  ```
+
+  Generate svc template:
+  ```
+  k expose pod redis --port=6379 --name redis-service --dry-run=client -o yaml > redis-service.yaml
+  ```
+
+  Edit file with svc and change :
+  ```
+  apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    labels:
+      tier: db
+    name: redis-service
+  spec:
+    ports:
+    - port: 6379
+      protocol: TCP
+      targetPort: 6379
+    selector:
+      tier: db
+    clusterIP: 10.43.0.18
+    type: LoadBalancer
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 192.0.2.127
+  ```  
+
 </details>
 
 **Useful official documentation**
 
-- None
+- [Kubernetes service](https://kubernetes.io/docs/concepts/services-networking/service/)
 
 **Useful non-official documentation**
 
@@ -1478,11 +1815,9 @@ Examples:
 
 1. None
 
-
 ## Videos
 
 1. [Kubernetes Certified Application Developer (CKAD) with Tests by Mumshad Mannambeth](https://www.udemy.com/course/certified-kubernetes-application-developer)
-
 
 ## Containers and Kubernetes Application Developer
 
@@ -1493,7 +1828,9 @@ Examples:
 
 # Authors
 
-Created and maintained by [Vitalii Natarov](https://github.com/SebastianUA). An email: [vitaliy.natarov@yahoo.com](vitaliy.natarov@yahoo.com).
+Created and maintained by:
+- [Vitalii Natarov](https://github.com/SebastianUA). An email: [vitaliy.natarov@yahoo.com](vitaliy.natarov@yahoo.com).
+- Thanks [Petro Diachenko](mehanic2000@gmail.com) for helps in that materials.
 
 
 # License
