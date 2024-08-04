@@ -21,6 +21,37 @@ Certified Kubernetes Application Developer (CKAD): Open new career doors – pro
 - [Candidate Handbook](https://www.cncf.io/certification/candidate-handbook)
 - [Verify Certification](https://training.linuxfoundation.org/certification/verify/)
 
+# Global Tips
+
+## Shortcuts / Aliases
+
+- po = PODs
+- rs = ReplicaSets
+- deploy = Deployments
+- svc = Services
+- ns = Namespaces
+- netpol = Network Policies
+- pv = Persistent Volumes
+- pvc = Persistent Volume Claims
+- sa = Service Accounts
+- cm = Configmap
+
+## Kubectl Autocomple and Alias
+
+Configure the Kubectl autocomplete and the `alias k=kubectl`:
+```
+source <(kubectl completion bash) # setup autocomplete in bash into the current shell, bash-completion package should be installed first.
+echo "source <(kubectl completion bash)" >> ~/.bashrc # add autocomplete permanently to your bash shell.
+```
+
+NOTE: If you use `ZSH` or another shell, modify the correct path to configuration if so.
+
+You can also use a shorthand alias for kubectl that also works with completion:
+```
+alias k=kubectl
+complete -F __start_kubectl k
+```
+
 
 # Structure of certification
 
@@ -570,23 +601,429 @@ The kubelet uses readiness probes to know when a container is ready to start acc
 The kubelet uses startup probes to know when a container application has started. If such a probe is configured, liveness and readiness probes do not start until it succeeds, making sure those probes don't interfere with the application startup. This can be used to adopt liveness checks on slow starting containers, avoiding them getting killed by the kubelet before they are up and running.
 
 Examples:
-- <details><summary>Example_1: Create readiness probes:</summary>
+- <details><summary>Example_1: Create readiness probe with httpGet:</summary>
+
+  Create a new pod to play around with readiness probe, for example:
+  ```
+  k run readiness-probe-httpget --image=nginx --dry-run=client -oyaml > readiness-probe-httpget.yaml
+  ```
+
+  Edit created file and add `httpGet` readiness probe on `8080` port: 
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: readiness-probe-httpget
+    name: readiness-probe-httpget
+  spec:
+    containers:
+    - image: nginx
+      name: readiness-probe-httpget
+      ports:
+      - containerPort: 8080
+        protocol: TCP
+      readinessProbe:
+        httpGet:
+          path: /
+          port: 8080
+      resources: {}
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  Apply file:
+  ```
+  k apply -f readiness-probe-httpget.yaml
+  ```
+
+  Checking:
+  ```
+  k get po readiness-probe-httpget
+  ```
 
 </details>
 
-- <details><summary>Example_2: Create liveness probes:</summary>
+- <details><summary>Example_2: Create readiness probe with exec:</summary>
+
+  Create a new pod to play around with readiness probe, for example:
+  ```
+  k run readiness-probe-exec --image=nginx --dry-run=client -oyaml > readiness-probe-exec.yaml
+  ```
+
+  Edit created file and add `exec` readiness probe on `8080` port: 
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: readiness-probe-exec
+    name: readiness-probe-exec
+  spec:
+    containers:
+    - image: nginx
+      name: readiness-probe-exec
+      ports:
+      - containerPort: 8080
+        protocol: TCP
+      readinessProbe:
+        exec:
+          command:
+          - "nc"
+          - "-z"
+          - "-v" 
+          - "localhost"
+          - "8080"
+        initialDelaySeconds: 5
+        periodSeconds: 5  
+      resources: {}
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  Apply file:
+  ```
+  k apply -f readiness-probe-exec.yaml
+  ```
+
+  Checking:
+  ```
+  k get po readiness-probe-exec
+  ```
 
 </details>
 
-- <details><summary>Example_3: Create startup probes:</summary>
+- <details><summary>Example_3: Create readiness probe with tcpSocket:</summary>
+
+  Create a new pod to play around with readiness probe, for example:
+  ```
+  k run readiness-probe-tcpsocket --image=nginx --dry-run=client -oyaml > readiness-probe-tcpsocket.yaml
+  ```
+
+  Edit created file and add `tcpSocket` readiness probe on `8080` port: 
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: readiness-probe-tcpsocket
+    name: readiness-probe-tcpsocket
+  spec:
+    containers:
+    - image: nginx
+      name: readiness-probe-tcpsocket
+      ports:
+      - containerPort: 8080
+        protocol: TCP
+      readinessProbe:
+        tcpSocket:
+          port: 8080
+        initialDelaySeconds: 15
+        periodSeconds: 10
+      resources: {}
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  Apply file:
+  ```
+  k apply -f readiness-probe-tcpsocket.yaml
+  ```
+
+  Checking:
+  ```
+  k get po readiness-probe-tcpsocket
+  ```
 
 </details>
 
-- <details><summary>Example_4: Create a health check with http/https:</summary>
+- <details><summary>Example_4: Create liveness probe with httpGet:</summary>
+
+  Create a new pod to play around with liveness probe, for example:
+  ```
+  k run liveness-probe-httpget --image=nginx --dry-run=client -oyaml > liveness-probe-httpget.yaml
+  ```
+
+  Edit created file and add `httpGet` liveness probe on `8080` port: 
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: liveness-probe-httpget
+    name: liveness-probe-httpget
+  spec:
+    containers:
+    - image: nginx
+      name: liveness-probe-httpget
+      ports:
+      - containerPort: 8080
+        protocol: TCP
+      livenessProbe:
+        httpGet:
+          path: /
+          port: 8080   
+      resources: {}
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  Apply file:
+  ```
+  k apply -f liveness-probe-httpget.yaml
+  ```
+
+  Checking:
+  ```
+  k get po liveness-probe-httpget
+  ```
 
 </details>
 
-- <details><summary>Example_5: Create a health check with exec</summary>
+- <details><summary>Example_5: Create liveness probe with exec:</summary>
+
+  Create a new pod to play around with liveness probe, for example:
+  ```
+  k run liveness-probe-exec --image=nginx --dry-run=client -oyaml > liveness-probe-exec.yaml
+  ```
+
+  Edit created file and add `exec` liveness probe on `8080` port: 
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: liveness-probe-exec
+    name: liveness-probe-exec
+  spec:
+    containers:
+    - image: nginx
+      name: liveness-probe-exec
+      ports:
+      - containerPort: 8080
+        protocol: TCP
+      readinessProbe:
+        exec:
+          command:
+            - "nc"
+            - "-z"
+            - "-v"
+            - "localhost"
+            - "8080"
+        initialDelaySeconds: 5
+        periodSeconds: 5
+      resources: {}
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  Apply file:
+  ```
+  k apply -f liveness-probe-exec.yaml
+  ```
+
+  Checking:
+  ```
+  k get po liveness-probe-exec
+  ```
+
+</details>
+
+- <details><summary>Example_6: Create liveness probe with tcpSocket:</summary>
+
+  Create a new pod to play around with liveness probe, for example:
+  ```
+  k run liveness-probe-tcpsocket --image=nginx --dry-run=client -oyaml > liveness-probe-tcpsocket.yaml
+  ```
+
+  Edit created file and add `tcpSocket` liveness probe on `8080` port: 
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: liveness-probe-tcpsocket
+    name: liveness-probe-tcpsocket
+  spec:
+    containers:
+    - image: nginx
+      name: liveness-probe-tcpsocket
+      ports:
+      - containerPort: 8080
+        protocol: TCP
+      readinessProbe:
+        tcpSocket:
+          port: 8080
+        initialDelaySeconds: 15
+        periodSeconds: 10
+      resources: {}
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  Apply file:
+  ```
+  k apply -f liveness-probe-tcpsocket.yaml
+  ```
+
+  Checking:
+  ```
+  k get po liveness-probe-tcpsocket
+  ```
+
+</details>
+
+- <details><summary>Example_7: Create startup probe with httpGet:</summary>
+
+  Create a new pod to play around with startup probe, for example:
+  ```
+  k run startup-probe-httpget --image=nginx --dry-run=client -oyaml > startup-probe-httpget.yaml
+  ```
+
+  Edit created file and add `httpGet` startup probe on `8080` port: 
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: startup-probe-httpget
+    name: startup-probe-httpget
+  spec:
+    containers:
+    - image: nginx
+      name: startup-probe-httpget
+      ports:
+      - containerPort: 8080
+        protocol: TCP
+      startupProbe:
+        httpGet:
+          path: /
+          port: 8080  
+      resources: {}
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  Apply file:
+  ```
+  k apply -f startup-probe-httpget.yaml
+  ```
+
+  Checking:
+  ```
+  k get po startup-probe-httpget
+  ```
+
+</details>
+
+- <details><summary>Example_8: Create startup probe with exec:</summary>
+
+  Create a new pod to play around with startup probe, for example:
+  ```
+  k run startup-probe-exec --image=nginx --dry-run=client -oyaml > startup-probe-exec.yaml
+  ```
+
+  Edit created file and add `exec` startup probe on `8080` port: 
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: startup-probe-exec
+    name: startup-probe-exec
+  spec:
+    containers:
+    - image: nginx
+      name: startup-probe-exec
+      ports:
+      - containerPort: 8080
+        protocol: TCP
+      startupProbe:
+        exec:
+          command:
+            - "nc"
+            - "-z"
+            - "-v"
+            - "localhost"
+            - "8080"
+        initialDelaySeconds: 5
+        periodSeconds: 5
+      resources: {}
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  Apply file:
+  ```
+  k apply -f startup-probe-exec.yaml
+  ```
+
+  Checking:
+  ```
+  k get po startup-probe-exec
+  ```
+
+</details>
+
+- <details><summary>Example_9: Create startup probe with tcpSocket:</summary>
+
+  Create a new pod to play around with startup probe, for example:
+  ```
+  k run startup-probe-tcpsocket --image=nginx --dry-run=client -oyaml > startup-probe-tcpsocket.yaml
+  ```
+
+  Edit created file and add `tcpSocket` startup probe on `8080` port: 
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: null
+    labels:
+      run: startup-probe-tcpsocket
+    name: startup-probe-tcpsocket
+  spec:
+    containers:
+    - image: nginx
+      name: startup-probe-tcpsocket
+      ports:
+      - containerPort: 8080
+        protocol: TCP
+      startupProbe:
+        tcpSocket:
+          port: 8080
+        initialDelaySeconds: 15
+        periodSeconds: 10
+      resources: {}
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+  status: {}
+  ```
+
+  Apply file:
+  ```
+  k apply -f startup-probe-tcpsocket.yaml
+  ```
+
+  Checking:
+  ```
+  k get po startup-probe-tcpsocket
+  ```
 
 </details>
 
@@ -1789,7 +2226,33 @@ Examples:
 
 </details>
 
-- <details><summary>Example_2: Create Ingress with Traefic:</summary>
+- <details><summary>Example_2: Create Ingress with Traefik:</summary>
+
+  An example of configuration:
+  ```
+  ---
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    name: traefik-ingress
+    namespace: traefik
+    annotations:
+      kubernetes.io/ingress.class: traefik
+      traefik.ingress.kubernetes.io/rule-type: PathPrefixStrip
+  spec:
+    rules:
+    - host: traefik.captainua.local
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: traefik
+              port:
+                number: 80
+
+  ```
 
 </details>
 
@@ -1799,7 +2262,8 @@ Examples:
 
 **Useful non-official documentation**
 
-- None
+- [Ingress with Traefik](https://kubernetes-tutorial.schoolofdevops.com/ingress/)
+- [kubernetes ingress with Traefik](https://doc.traefik.io/traefik/routing/providers/kubernetes-ingress/#annotations)
 
 
 # Additional useful material
