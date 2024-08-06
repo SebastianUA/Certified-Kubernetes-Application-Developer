@@ -1,4 +1,4 @@
- Certified Kubernetes Application Developer (CKAD) in 2024
+# Certified Kubernetes Application Developer (CKAD) in 2024
 
 Certified Kubernetes Application Developer (CKAD): Open new career doors – prove your Kubernetes & cloud native developer skills with the CKAD certification that is recognized globally, vendor-neutral, and relevant across all industries.
 
@@ -6,7 +6,7 @@ Certified Kubernetes Application Developer (CKAD): Open new career doors – pro
   <img width="360" src="ckad.png">
 </p>
 
- Certification
+# Certification
 
 - Duration of Exam: **120 minutes**.
 - Number of questions: **15-20 hands-on performance-based tasks**.
@@ -21,9 +21,9 @@ Certified Kubernetes Application Developer (CKAD): Open new career doors – pro
 - [Candidate Handbook](https://www.cncf.io/certification/candidate-handbook)
 - [Verify Certification](https://training.linuxfoundation.org/certification/verify/)
 
- Global Tips
+# Global Tips
 
- Shortcuts / Aliases
+## Shortcuts / Aliases
 
 - po = PODs
 - rs = ReplicaSets
@@ -36,7 +36,7 @@ Certified Kubernetes Application Developer (CKAD): Open new career doors – pro
 - sa = Service Accounts
 - cm = Configmap
 
- Kubectl Autocomple and Alias
+## Kubectl Autocomple and Alias
 
 Configure the Kubectl autocomplete and the `alias k=kubectl`:
 ```
@@ -53,11 +53,11 @@ complete -F __start_kubectl k
 ```
 
 
- Structure of certification
+# Structure of certification
 
- Application Design and Build - 20%
+## Application Design and Build - 20%
 
- Define, build and modify container images
+### Define, build and modify container images
 
 Examples:
 - <details><summary>Example_1: Build and modify container images with Docker:</summary>
@@ -144,7 +144,7 @@ Examples:
 - [Docker documentation](https://docs.docker.com/build)
 - [Podman documentation](https://docs.podman.io/en/latest/Introduction.html)
 
- Choose and use the right workload resource (Deployment, DaemonSet, CronJob, etc.)
+ ### Choose and use the right workload resource (Deployment, DaemonSet, CronJob, etc.)
 
 Examples:
 
@@ -187,6 +187,7 @@ Examples:
   - `ttlSecondsAfterFinished`: A way to clean up finished Jobs (either Complete or Failed) automatically is to use a TTL mechanism provided by a TTL controller for finished resources, by specifying the `.spec.ttlSecondsAfterFinished` field of the Job. For example: `ttlSecondsAfterFinished: 100`.
   - `parallelism`: Determines the maximum number of Pods that can run in parallel. For example, if you set `parallelism` to `2`, Kubernetes will ensure that no more than two pods are running at the same time.
   - `completions`: Determines the desired number of successfully finished pods a Job should have. For example, if you set `completions` to `5`, Kubernetes will ensure that five Pods have completed successfully.
+  - `activeDeadlineSeconds`: The activeDeadlineSeconds applies to the duration of the job, no matter how many Pods are created. Once a Job reaches activeDeadlineSeconds , all of its running Pods are terminated and the Job status will become type: Failed with reason: DeadlineExceeded."
 
   To delete job:
   ```
@@ -223,6 +224,7 @@ Examples:
         completions: 3
         parallelism: 3
         backoffLimit: 25
+        activeDeadlineSeconds: 20
         template:
           metadata:
             creationTimestamp: null
@@ -358,7 +360,7 @@ Examples:
 
 - None
 
- Understand multi-container Pod design patterns (e.g. sidecar, init and others)
+### Understand multi-container Pod design patterns (e.g. sidecar, init and others)
 
 Examples:
 - <details><summary>Example_1: Using sidecar container:</summary>
@@ -506,7 +508,7 @@ Examples:
 - [Kubernetes Multi Container Pod patterns - Adapter Container Pattern](https://navyadevops.hashnode.dev/kubernetes-multi-container-pod-patterns-adapter-container-pattern)
 - [Kubernetes Sidecar Container - Best Practices and Examples](https://www.atatus.com/blog/kubernetes-sidecar-container-best-practices-and-examples/what-is-a-sidecar-container)
 
- Utilize persistent and ephemeral volumes
+### Utilize persistent and ephemeral volumes
 
 Examples:
 - <details><summary>Example_1: Working with storageClass:</summary>
@@ -516,7 +518,7 @@ Examples:
   k get sc
   ```
 
-  Create a new storageClass, for example with `local-storage` name:
+  Create a new storageClass, for example with `local-storage` name inside `local-storage.yaml` file:
   ```
   apiVersion: storage.k8s.io/v1
   kind: StorageClass
@@ -524,6 +526,11 @@ Examples:
     name: local-storage
   provisioner: kubernetes.io/no-provisioner
   volumeBindingMode: WaitForFirstConsumer
+  ```
+
+  Apply the file:
+  ```
+  k apply -f local-storage.yaml
   ```
 
 </details>
@@ -540,6 +547,81 @@ Examples:
   k get pvc -n qa
   ```
 
+  Let's add a new PersistentVolume to `pv-log.yaml` file:
+  ```
+  ---
+  apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: pv-log
+  spec:
+    persistentVolumeReclaimPolicy: Retain
+    accessModes:
+      - ReadWriteMany
+    capacity:
+      storage: 100Mi
+    hostPath:
+      path: /pv/log
+  ```
+
+  Apply file:
+  ```
+  K apply -f pv-log.yaml
+  ```
+  
+  Let's add a new PersistentVolumeClaim to `local-pvc.yaml` file:
+  ```
+  ---
+  kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: local-pvc
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    storageClassName: local-storage
+    resources:
+      requests:
+        storage: 500Mi
+  ```
+
+  Apply `local-pvc.yaml` file:
+  ```
+  k apply -f local-pvc.yaml
+  ```
+
+  Check events:
+  ```
+  kubectl describe pvc local-pvc | grep -A3 Events
+  ```
+
+  Solution manifest file to create a pod called nginx is as follows into `nginx-pod.yaml` file:
+  ```
+  ---
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: nginx
+    labels:
+      name: nginx
+  spec:
+    containers:
+    - name: nginx
+      image: nginx:alpine
+      volumeMounts:
+        - name: local-persistent-storage
+          mountPath: /var/www/html
+    volumes:
+      - name: local-persistent-storage
+        persistentVolumeClaim:
+          claimName: local-pvc
+  ```
+
+  Apply it:
+  ```
+  k apply -f nginx-pod.yaml
+  ```
+
 </details>
 
 **Useful official documentation**
@@ -553,16 +635,20 @@ Examples:
 - None
 
 
- Application Deployment - 20%
+## Application Deployment - 20%
 
- Use Kubernetes primitives to implement common deployment strategies (e.g. blue/green or canary)
+### Use Kubernetes primitives to implement common deployment strategies (e.g. blue/green or canary)
 
 Examples:
 - <details><summary>Example_1: Using Blue/Green deployment:</summary>
 
+  TBD
+
 </details>
 
 - <details><summary>Example_2: Using Canary deployment:</summary>
+
+  TBD
 
 </details>
 
@@ -574,7 +660,7 @@ Examples:
 
 - None
 
- Understand Deployments and how to perform rolling updates
+### Understand Deployments and how to perform rolling updates
 
 Examples:
 - <details><summary>Example_1: Using rolling updates:</summary>
@@ -642,15 +728,19 @@ Examples:
 
 - None
 
- Use the Helm package manager to deploy existing packages
+### Use the Helm package manager to deploy existing packages
 
 Examples:
 - <details><summary>Example_1: Install helm on the host:</summary>
+
+  TBD
 
 </details>
 
 - <details><summary>Example_2: Using helm:</summary>
 
+  TBD
+
 </details>
 
 **Useful official documentation**
@@ -661,11 +751,13 @@ Examples:
 
 - None
 
- Kustomize
+### Kustomize
 
 Examples:
 - <details><summary>Example_1: TBD:</summary>
 
+  TBD
+
 </details>
 
 **Useful official documentation**
@@ -676,9 +768,9 @@ Examples:
 
 - None
 
- Application Observability and Maintenance - 15%
+## Application Observability and Maintenance - 15%
 
- Understand API deprecations
+### Understand API deprecations
 
 Examples:
 - <details><summary>Example_1: Find and fix deprecations API in PODs/Deployments:</summary>
@@ -719,7 +811,7 @@ Examples:
 
 - None
 
- Implement probes and health checks
+### Implement probes and health checks
 
 A common pattern for liveness probes is to use the same low-cost HTTP endpoint as for readiness probes, but with a higher failureThreshold. This ensures that the pod is observed as not-ready for some period of time before it is hard killed.
 
@@ -1162,7 +1254,7 @@ Examples:
 
 - None
 
- Use built-in CLI tools to monitor Kubernetes applications
+### Use built-in CLI tools to monitor Kubernetes applications
 
 For certification, only needs - `metrics server`. Metrics Server is a scalable, efficient source of container resource metrics for Kubernetes built-in autoscaling pipelines. Metrics Server collects resource metrics from Kubelets and exposes them in Kubernetes apiserver through Metrics API for use by Horizontal Pod Autoscaler and Vertical Pod Autoscaler.
 
@@ -1200,10 +1292,12 @@ Examples:
 
 </details>
 
- Utilize container logs
+### Utilize container logs
 
 Examples:
 - <details><summary>Example_1: TBD:</summary>
+
+  TBD
 
 </details>
 
@@ -1215,10 +1309,12 @@ Examples:
 
 - None
 
- Debugging in Kubernetes
+### Debugging in Kubernetes
 
 Examples:
 - <details><summary>Example_1: TBD:</summary>
+
+  TBD
 
 </details>
 
@@ -1231,14 +1327,16 @@ Examples:
 - None
 
 
- Application Environment, Configuration and Security - 25%
+## Application Environment, Configuration and Security - 25%
 
- Discover and use resources that extend Kubernetes (CRD, Operators)
+### Discover and use resources that extend Kubernetes (CRD, Operators)
 
 A custom resource is an object that extends the Kubernetes API or allows you to introduce your own API into a project or a cluster. A custom resource definition (CRD) file defines your own object kinds and lets the API Server handle the entire lifecycle.
 
 Examples:
 - <details><summary>Example_1: Using Custom Resource Definition (CRD):</summary>
+
+  TBD
 
 </details>
 
@@ -1250,7 +1348,7 @@ Examples:
 
 - None
 
- Understand authentication, authorization and admission controllers
+### Understand authentication, authorization and admission controllers
 
 To access and manage any Kubernetes resource or object in the cluster, we need to access a specific API endpoint on the API server. Each access request goes through the following three stages:
 
@@ -1343,7 +1441,7 @@ Examples:
 
 - [Kubernetes Access Control with Authentication, Authorization & Admission Control](https://blog.kubesimplify.com/kubernetes-access-control-with-authentication-authorization-admission-control)
 
- Understand requests, limits, quotas
+### Understand requests, limits, quotas
 
 Examples:
 - <details><summary>Example_1: Setting up resources requests for POD:</summary>
@@ -1559,7 +1657,7 @@ Examples:
 
 - None
 
- Understand ConfigMaps
+### Understand ConfigMaps
 
 Kubernetes ConfigMap is a built-in Kubernetes API object that’s designed to store your application’s non-sensitive key-value config data. ConfigMaps allow you to keep config values separate from your code and container images. Values can be strings or Base64-encoded binary data.
 
@@ -1714,7 +1812,7 @@ Examples:
 
 - None
 
- Define resource requirements
+### Define resource requirements
 
 Let us try to understand the whole concept in following points :
 - **Understand Resource Limits**: Before we delve into the details of limiting Kubernetes resources, it's crucial to have a clear understanding of what resource limits are and why they are important. Resource limits define the maximum amount of CPU and memory that a container can consume within a Kubernetes cluster. By setting resource limits, you prevent containers from monopolizing resources, ensuring fair allocation and preventing resource exhaustion. When setting resource limits, it's essential to consider the specific requirements of your applications and the available resources in your cluster. By understanding the resource needs of your workloads, you can effectively allocate resources and avoid bottlenecks or performance issues.
@@ -1754,7 +1852,7 @@ Examples:
 
 - [Understanding Resource Requirements — Kubernetes](https://ngugijoan.medium.com/understanding-resource-requirements-kubernetes-9bd34245f779)
 
- Create & consume Secrets
+### Create & consume Secrets
 
 A Kubernetes secret is an object storing sensitive pieces of data such as usernames, passwords, tokens, and keys. Secrets are created by the system during an app installation or by users whenever they need to store sensitive information and make it available to a pod.
 
@@ -2026,7 +2124,7 @@ Examples:
 
 - None
 
- Understand ServiceAccounts
+### Understand ServiceAccounts
 
 Examples:
 - <details><summary>Example_1: Create service accounts:</summary>
@@ -2135,7 +2233,7 @@ Examples:
 
 - None
 
- Understand Application Security (SecurityContexts, Capabilities, etc.)
+### Understand Application Security (SecurityContexts, Capabilities, etc.)
 
 Examples:
 - <details><summary>Example_1: Working with SecurityContext:</summary>
@@ -2263,12 +2361,14 @@ Examples:
 - [Kubernetes SecurityContext with practical examples](https://medium.com/marionete/kubernetes-securitycontext-with-practical-examples-67d890558d11)
 
 
- Services and Networking - 20%
+## Services and Networking - 20%
 
- Demonstrate basic understanding of NetworkPolicies
+### Demonstrate basic understanding of NetworkPolicies
 
 Examples:
 - <details><summary>Example_1: TBD:</summary>
+
+  TBD
 
 </details>
 
@@ -2280,7 +2380,7 @@ Examples:
 
 - None
 
- Provide and troubleshoot access to applications via services
+### Provide and troubleshoot access to applications via services
 
 Examples:
 - <details><summary>Example_1: Service with NodePort:</summary>
@@ -2297,7 +2397,7 @@ Examples:
 
 </details>
 
-- <details><summary>Example_1: Service with ClusterIP:</summary>
+- <details><summary>Example_2: Service with ClusterIP:</summary>
 
   Create a pod called `httpd` using the `httpd:alpine` image in the default namespace. Next, create a `service` of type `ClusterIP` by the same name (httpd). The target port for the service should be `80`:
   ```
@@ -2306,7 +2406,7 @@ Examples:
 
 </details>
 
-- <details><summary>Example_1: Service with LoadBalancer:</summary>
+- <details><summary>Example_3: Service with LoadBalancer:</summary>
 
   Creating a new POD:
   ```
@@ -2340,7 +2440,7 @@ Examples:
     loadBalancer:
       ingress:
       - ip: 192.0.2.127
-  ```  
+  ```
 
 </details>
 
@@ -2352,10 +2452,12 @@ Examples:
 
 - None
 
- Use Ingress rules to expose applications
+### Use Ingress rules to expose applications
 
 Examples:
 - <details><summary>Example_1: Create Ingress with Nginx:</summary>
+
+  TBD
 
 </details>
 
@@ -2384,7 +2486,7 @@ Examples:
               name: traefik
               port:
                 number: 80
-
+  
   ```
 
 </details>
@@ -2399,36 +2501,36 @@ Examples:
 - [kubernetes ingress with Traefik](https://doc.traefik.io/traefik/routing/providers/kubernetes-ingress/annotations)
 
 
- Additional useful material
+# Additional useful material
 
- Articles
+## Articles
 
 1. [Cheatsheet for Kubernetes](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
 2. [Handbook](https://www.cncf.io/certification/candidate-handbook)
 3. [Exam Tips](https://docs.linuxfoundation.org/tc-docs/certification/tips-cka-and-ckad)
 
 
- Books
+## Books
 
 1. None
 
- Videos
+## Videos
 
 1. [Kubernetes Certified Application Developer (CKAD) with Tests by Mumshad Mannambeth](https://www.udemy.com/course/certified-kubernetes-application-developer)
 
- Containers and Kubernetes Application Developer
+## Containers and Kubernetes Application Developer
 
 1. [Killer.sh CKAD practice exam](https://killer.sh/ckad)
 2. [Killer Shell CKAD - Interactive Scenarios for Kubernetes Application Developers](https://killercoda.com/killer-shell-ckad)
 3. [Kodekloud playground](https://uklabs.kodekloud.com/courses/labs-certified-kubernetes-application-developer)
 
 
- Authors
+# Authors
 
 Created and maintained by:
 - [Vitalii Natarov](https://github.com/SebastianUA). An email: [vitaliy.natarov@yahoo.com](vitaliy.natarov@yahoo.com).
 - Thanks [Petro Diachenko](mehanic2000@gmail.com) for helps in that materials.
 
 
- License
+# License
 Apache 2 Licensed. See [LICENSE](https://github.com/SebastianUA/Certified-Kubernetes-Application-Developer/blob/main/LICENSE) for full details.
