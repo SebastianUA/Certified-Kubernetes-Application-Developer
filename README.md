@@ -34,7 +34,8 @@ Certified Kubernetes Application Developer (CKAD): Open new career doors – pro
 - pv = Persistent Volumes
 - pvc = Persistent Volume Claims
 - sa = Service Accounts
-- cm = Configmap
+- cm = ConfigMaps
+- cj = CrobJobs
 
 ## Kubectl Autocomple and Alias
 
@@ -654,11 +655,16 @@ Examples:
 
 **Useful official documentation**
 
-- None
+- [Kubernetes deployments](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
 
 **Useful non-official documentation**
 
-- None
+- [Implementing Canary Deployment in Kubernetes](https://medium.com/@muppedaanvesh/implementing-canary-deployment-in-kubernetes-0be4bc1e1aca)
+- [Complete Guide On Kubernetes Canary Deployment](https://zeet.co/blog/kubernetes-canary-deployment)
+- [Create a Kubernetes Canary deployment](https://developer.harness.io/docs/continuous-delivery/deploy-srv-diff-platforms/kubernetes/kubernetes-executions/create-a-kubernetes-canary-deployment/)
+- [Using Canary Deployments in Kubernetes](https://earthly.dev/blog/canary-deployment-in-k8s/)
+- [Implementing Canary Deployments in Kubernetes: A Comprehensive Guide](https://medium.com/@lexitrainerph/implementing-canary-deployments-in-kubernetes-a-comprehensive-guide-b0ab988e5331)
+- [Canary Deployments in Kubernetes: An In-Depth Guide](https://overcast.blog/canary-deployments-in-kubernetes-an-in-depth-guide-81ede6a28977)
 
 ### Understand Deployments and how to perform rolling updates
 
@@ -731,17 +737,58 @@ Examples:
 ### Use the Helm package manager to deploy existing packages
 
 Examples:
-- <details><summary>Example_1: Install helm on the host:</summary>
+- <details><summary>Example_1: Install & use helm:</summary>
 
-  TBD
+  Run the next commands:
+  ```
+  curl https://baltocdn.com/helm/signing.asc | apt-key add -
+  apt-get install apt-transport-https --yes
+  echo "deb https://baltocdn.com/helm/stable/debian/ all main" | tee /etc/apt/sources.list.d/helm-stable-debian.list
+  apt-get update && apt-get install helm
+  ```
+
+  Now, you can add some repo:
+  ```
+  helm repo add bitnami https://charts.bitnami.com/bitnami
+  ```
+
+  Search packege, for example:
+  ```
+  helm search repo joomla
+  ```
+
+  To get list of repos:
+  ```
+  helm repo list
+  ```
+
+  Now, let's install something, for example:
+  ```
+  helm install drupal bitnami/drupal
+  ```
+
+  To get releases:
+  ```
+  helm list
+  ```
+
+  To delete installed release:
+  ```
+  helm uninstall drupal
+  ```
+
+  To download some release and store it on host you can use the next command:
+  ```
+  helm pull --untar  bitnami/apache
+  ```
+
+  To deploy your release:
+  ```
+  helm install mywebapp ./apache
+  ```
 
 </details>
 
-- <details><summary>Example_2: Using helm:</summary>
-
-  TBD
-
-</details>
 
 **Useful official documentation**
 
@@ -780,6 +827,11 @@ Examples:
   k explain deploy
   ```
 
+  Get API version of job:
+  ```
+  kubectl explain job | grep -Ei group
+  ```
+
   Get API version of POD:
   ```
   k explain pod
@@ -790,9 +842,27 @@ Examples:
   kubectl api-resources
   ```
 
+  Show resources per namespace or non-namespaced resources:
+  ```
+  k api-resources --namespaced=false
+  ```
+
 </details>
 
 - <details><summary>Example_2: Enabling/Disabling API Groups in Kubernetes:</summary>
+
+  Enable the `v1alpha1` version for `rbac.authorization.k8s.io` API group on the `controlplane` node. Opening `/etc/kubernetes/manifests/kube-apiserver.yaml` file and put `--runtime-config` something like this:
+  ```
+   - command:
+    - kube-apiserver
+    - --advertise-address=10.18.17.8
+    - --allow-privileged=true
+    - --authorization-mode=Node,RBAC
+    - --client-ca-file=/etc/kubernetes/pki/ca.crt
+    - --enable-admission-plugins=NodeRestriction
+    - --enable-bootstrap-token-auth=true
+    - --runtime-config=rbac.authorization.k8s.io/v1alpha1
+  ```
 
   Adding str inside `/etc/kubernetes/manifests/kube-apiserver.yaml`:
   ```
@@ -800,6 +870,19 @@ Examples:
   --runtime-config=batch/v2alpha1
   ....
   ```
+
+  Now, let's install the `kubectl convert` plugin on the `controlplane` node:
+  ```
+  curl -LO https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl-convert
+  chmod +x kubectl-convert
+  mv kubectl-convert /usr/local/bin/kubectl-convert
+  ```
+
+  Now, you will be able to convert any resources, for example:
+  ```
+  kubectl-convert -f ingress-old.yaml --output-version networking.k8s.io/v1
+  ```
+
 
 </details>
 
@@ -1295,9 +1378,17 @@ Examples:
 ### Utilize container logs
 
 Examples:
-- <details><summary>Example_1: TBD:</summary>
+- <details><summary>Example_1: Getting logs:</summary>
 
-  TBD
+  To get logs from POD, use:
+  ```
+  k logs <POD_ID_or_NAME>
+  ```
+
+  To get logs from deployment, use:
+  ```
+  k logs <DEPLOYMENT_NAME_or_ID>
+  ```
 
 </details>
 
@@ -1312,9 +1403,48 @@ Examples:
 ### Debugging in Kubernetes
 
 Examples:
-- <details><summary>Example_1: TBD:</summary>
+- <details><summary>Example_1: Using logs:</summary>
 
-  TBD
+  To get logs from POD, use:
+  ```
+  k logs <POD_ID_or_NAME>
+  ```
+
+  To get logs from deployment, use:
+  ```
+  k logs <DEPLOYMENT_NAME_or_ID>
+  ```
+
+</details>
+
+- <details><summary>Example_2: Using describe command in kubectl:</summary>
+
+  To describe POD, use:
+  ```
+  k describe po <POD_ID_or_NAME>
+  ```
+
+  To get logs from deployment, use:
+  ```
+  k describe deploy <DEPLOYMENT_NAME_or_ID>
+  ```
+
+</details>
+
+- <details><summary>Example_3: Using crictl:</summary>
+
+  Getting ID of container:
+  ```
+  crictl ps -a | grep api
+  ```
+
+  Check logs:
+  ```
+  crictl logs fbb80dac7429e
+  ```
+
+  Where:
+  - `fbb80dac7429e` - ID of container.
 
 </details>
 
@@ -1336,7 +1466,7 @@ A custom resource is an object that extends the Kubernetes API or allows you to 
 Examples:
 - <details><summary>Example_1: Using Custom Resource Definition (CRD):</summary>
 
-  TBD
+  TBD. But it's out of that certificate
 
 </details>
 
@@ -1397,6 +1527,11 @@ Examples:
   k config view
   ```
 
+  Or, if you have custome kubeconfig file, for example:
+  ```
+  k config get-clusters --kubeconfig=my-custom-kubeconfig
+  ```
+
 </details>
 
 - <details><summary>Example_2: Using Authorication mode in Kubernetes API server:</summary>
@@ -1411,7 +1546,7 @@ Examples:
 
 </details>
 
-- <details><summary>Example_3: Using RBAC to work with Kubernetes:</summary>
+- <details><summary>Example_3: Using RBAC to work with Kubernetes (roles and role bindings):</summary>
 
   To view roles in Kubernetes:
   ```
@@ -1423,13 +1558,106 @@ Examples:
   k get clusterrole
   ```
 
-  TBD - add role + rolebinging create
+  Create role & rolebinding:
+  ```
+  k create role role_name --verb=get,list,watch --resource=pods
+  k create rolebinding role_name_binding --role=role_name --user=captain --group=group1
+  ```
+
+  Verify:
+  ```
+  k auth can-i get pods --as captain -n kube-public
+  k auth can-i list pods --as captain -n default
+  ```
 
 </details>
 
-- <details><summary>Example_4: Using Admission controllers in Kubernetes:</summary>
+- <details><summary>Example_4: Using RBAC to work with Kubernetes (cluster roles and cluster role bindings):</summary>
 
-  TBD
+  Create clusterrole & clusterrolebinding:
+  ```
+  k create clusterrole cluster_role --verb=get,list,watch --resource=pods
+  k create clusterrolebinding cluster_role_binding --clusterrole=cluster_role --user=cap
+  ```
+  
+  Verify:
+  ```
+  k auth can-i list pods --as cap -n kube-public
+  k auth can-i list pods --as cap -n default
+  ```
+
+</details>
+
+- <details><summary>Example_5: Working with Service Account and RBAC:</summary>
+
+  Create Service Account and RBAC:
+  ```
+  k -n name_space_1 create sa ser_acc
+  k create clusterrolebinding ser_acc-view --clusterrole view --serviceaccount name_space_1:ser_acc
+  ```
+
+  Where: 
+  - `name_space_1` - NS name.
+  - `ser_acc` - Service account name.
+
+  Verify:
+  ```
+  k auth can-i update deployments --as system:serviceaccount:name_space_1:ser_acc -n default
+  k auth can-i update deployments --as system:serviceaccount:name_space_1:ser_acc -n name_space_1
+  ```
+
+</details>
+
+- <details><summary>Example_6: Using Admission controllers in Kubernetes:</summary>
+
+  Checking which controllers are in use:
+  ```
+  grep enable-admission-plugins /etc/kubernetes/manifests/kube-apiserver.yaml
+    - --enable-admission-plugins=NodeRestriction
+  ```
+
+  So, for example `NodeRestriction`.
+
+  Let's add `NamespaceAutoProvision` controller and play around with it. Opening `/etc/kubernetes/manifests/kube-apiserver.yaml` and put the next data:
+  ```
+  ...
+  spec:
+  containers:
+  - command:
+    - kube-apiserver
+    - --advertise-address=192.0.180.9
+    - --allow-privileged=true
+    - --authorization-mode=Node,RBAC
+    - --client-ca-file=/etc/kubernetes/pki/ca.crt
+    - --enable-admission-plugins=NodeRestriction,NamespaceAutoProvision
+  ...
+  ```
+
+  That controller allows you to auto-create namespaces. Let's check it! 
+  ```
+  kubectl run nginx --image nginx -n this-ns-doesnt-exist
+  pod/nginx created
+  ```
+
+  Also, you can disable controllers, for example, - let's disable `DefaultStorageClass`. `/etc/kubernetes/manifests/kube-apiserver.yaml` and put the next data:
+  ```
+  - --disable-admission-plugins=DefaultStorageClass
+  ```
+
+  To verify:
+  ```
+  ps -ef | grep kube-apiserver | grep admission-plugins
+  ```
+
+  *NOTE*: To get list plugins you can use:
+  ```
+  ps -ef | grep apiserver
+  ```
+  Getting plugins:
+  ```
+  /proc/15501/exe -h | grep -Ei plugins
+  ```
+  Where `15501` - PID ID of the process. 
 
 </details>
 
@@ -2366,9 +2594,101 @@ Examples:
 ### Demonstrate basic understanding of NetworkPolicies
 
 Examples:
-- <details><summary>Example_1: TBD:</summary>
+- <details><summary>Example_1: Create default deny networking policy with <b>deny-all</b> name in <b>monitoring</b> namespace:</summary>
+  
+  For example:
+  ```
+  ---
+  apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    name: deny-all
+    namespace: monitoring
+  spec:
+    podSelector: {}
+    policyTypes:
+    - Ingress
+    - Egress
+  ```
 
-  TBD
+</details>
+
+- <details><summary>Example_2: Create networking policy with <b>api-allow</b> name and create a restriction access to <b>api-allow</b> application that has deployed on <b>default</b> namespace and allow access only from <b>app2</b> pods:</summary>
+  
+  For example:
+  ```
+  ---
+  kind: NetworkPolicy
+  apiVersion: networking.k8s.io/v1
+  metadata:
+  name: api-allow
+  spec:
+  podSelector:
+    matchLabels:
+    run: my-app
+  ingress:
+  - from:
+     - podSelector:
+     matchLabels:
+       run: app2
+  ```
+
+</details>
+
+- <details><summary>Example_3: Define an allow-all policy which overrides the deny all policy on <b>default</b> namespace:</summary>
+  
+  For example:
+  ```
+  ---
+  apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    name: allow-all
+    namespace: default
+  spec:
+    podSelector: {}
+    policyTypes:
+    - Ingress
+    - Egress
+    ingress: {}
+    egress: {}
+  ```
+
+</details>
+
+ - <details><summary>Example_4: Create default deny networking policy for ingress only. Use netpol in <b>monitoring</b> namespace:</summary>
+  
+  For example:
+  ```
+  ---
+  apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    name: deny-ingress-only
+    namespace: monitoring
+  spec:
+    podSelector: {}
+    policyTypes:
+    - Ingress
+  ```
+
+</details>
+
+- <details><summary>Example_5: Create default deny networking policy for egress only. Use netpol in <b>monitoring</b> namespace:</summary>
+  
+  For example:
+  ```
+  ---
+  apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    name: deny-egress-only
+    namespace: monitoring
+  spec:
+    podSelector: {}
+    policyTypes:
+    - Egress
+  ```
 
 </details>
 
@@ -2457,11 +2777,97 @@ Examples:
 Examples:
 - <details><summary>Example_1: Create Ingress with Nginx:</summary>
 
-  TBD
+  Get ingress in `app-space` namespace:
+  ```
+  k get ingress -n app-space
+  ```
+
+  Congig file:
+  ```
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    name: ingress-wear-watch
+    namespace: app-space
+  spec:
+    rules:
+    - http:
+        paths:
+        - backend:
+            service:
+              name: wear-service
+              port: 
+                number: 8080
+          path: /wear
+          pathType: Prefix
+        - backend:
+            service:
+              name: video-service
+              port: 
+                number: 8080
+          path: /stream
+          pathType: Prefix
+   ```
+
+   Apply it:
+   ```
+   k apply -f ingress-wear-watch.yaml
+   ```
+
+  Also, you can generate ingress through CLI, let's get another example:
+  ```
+  k create ingress ingress-app1 --class=nginx --rule="*/*=app1-svc:80" --annotation="nginx.ingress.kubernetes.io/rewrite-target=/" --dry-run=client -o yaml > ingress-app1.yaml
+  ```
+
+  Apply the config:
+  ```
+  k apply -f ingress-app1.yaml
+  ``` 
 
 </details>
 
-- <details><summary>Example_2: Create Ingress with Traefik:</summary>
+- <details><summary>Example_2: Create ingress with <b>ingress-app1</b> name in <b>app1</b> namespace (with TLS):</summary>
+  
+  Example:
+  ```
+  ---
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+  name: ingress-app1
+  namespace: app1
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - "local.domail.name"
+    secretName: local-domain-tls
+  rules:
+  - http:
+    paths:
+    - path: /health
+      pathType: Prefix
+      backend:
+      service:
+        name: app1-svc
+        port:
+        number: 80
+  ```
+
+**NOTE:** You should create the needed <b>local-domain-tls</b> secret for Ingress with certifications:
+```
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout cert.key -out cert.crt -subj "/CN=local.domail.name/O=local.domail.name"
+kubectl -n app1 create secret tls local-domain-tls --key cert.key --cert cert.crt
+```
+
+</details>
+
+- <details><summary>Example_3: Create Ingress with Traefik:</summary>
 
   An example of configuration:
   ```
