@@ -643,13 +643,213 @@ Examples:
 Examples:
 - <details><summary>Example_1: Using Blue/Green deployment:</summary>
 
-  TBD
+  I would like to create `NS`:
+  ```
+  k create ns blue-green
+  ``` 
+
+  Create `blue` version of deployment with the command:
+  ```
+  k create -n blue-green deployment blue-app --image=nginx:1.19 --port=80 --replicas=4 --dry-run=client -oyaml > blue-app-deploy.yaml
+  ```
+
+  Set label with CLI, but you can add it manually:
+  ```
+  k label deployments.apps -n blue-green blue-app env=blue
+  ```
+
+  Get the deployment:
+  ```
+  kubectl get deployments -n blue-green --show-labels
+  NAME       READY   UP-TO-DATE   AVAILABLE   AGE    LABELS
+  blue-app   4/4     4            4           2m5s   app=blue-app,env=blue
+  ```
+  
+  An example of `blue` version of deployment looks like (`k get deployments.apps -n blue-green blue-app -o yaml` command and deleted some no needed lines):
+  ```
+  ---
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: blue-app
+      env: blue
+    name: blue-app
+    namespace: blue-green
+  spec:
+    replicas: 4
+    selector:
+      matchLabels:
+        app: blue-app
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: blue-app
+      spec:
+        containers:
+        - image: nginx:1.19
+          name: nginx
+          ports:
+          - containerPort: 80
+          resources: {}
+  status: {}
+  ```
+
+  NOTE: To apply file you can use `k apply -f blue-app-deploy.yaml`.
+
+  Create Kubernetes `service` with command:
+  ```
+  k expose -n blue-green deployment blue-app --name=blue-green-svc --type=NodePort --port=8088 --target-port=80 --selector="app=blue-app"
+  ```
+
+  NOTE: Can be possible to use `ClusterIP`.
+
+  Or, manually something like:
+  ```
+  apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: blue-app
+      env: blue
+    name: blue-green-svc
+    namespace: blue-green
+  spec:
+    ports:
+    - nodePort: 32298
+      port: 80
+      protocol: TCP
+      targetPort: 80
+    selector:
+      env: blue
+    type: NodePort
+  status: {}
+  ```
+
+  Getting svc:
+  ```
+  k get svc -n blue-green --show-labels
+  NAME             TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE     LABELS
+  blue-green-svc   NodePort   10.97.239.43   <none>        80:32298/TCP   2m14s   app=blue-app,env=blue
+  ```
+
+  Then, create a new `green` version of deployment with the command:
+  ```
+  k create -n blue-green deployment green-app --image=nginx:1.19 --port=80 --replicas=4 --dry-run=client -oyaml > green-app-deploy.yaml
+  ```
+
+  An example of `green` version of deployment looks like:
+  ```
+  ---
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: green-app
+      env: green
+    name: green-app
+    namespace: blue-green
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: green-app
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: green-app
+      spec:
+        containers:
+        - image: nginx:1.19
+          name: nginx
+          ports:
+          - containerPort: 80
+          resources: {}
+  status: {}
+  ```
+
+  Set a label with CLI, but you can add it manually:
+  ```
+  k label deployments.apps -n blue-green green-app env=green
+  ```
+
+  Then, switch traffic from `blue` to `green`:
+  ```
+  kubectl patch service blue-green-svc -n blue-green -p '{"spec":{"selector":{"app": "green-app"}}}'
+  ```
+
+  Now, checking:
+  ```
+  k describe svc -n blue-green blue-green-svc
+  ```
+
+  Also, can get output from `curl` command.
 
 </details>
 
 - <details><summary>Example_2: Using Canary deployment:</summary>
 
+  I would like to create `NS`:
+  ```
+  k create ns canary
+  ``` 
+
+  Create `primary` version of deployment with the command:
+  ```
+  k create -n canary deployment primary-app --image=nginx:1.19 --port=80 --replicas=4 --dry-run=client -oyaml > primary-app-deploy.yaml
+  ```
+
+  Set a label with CLI, but you can add it manually:
+  ```
+  k label deployments.apps -n canary primary-app env=primary
+  k label deployments.apps -n canary primary-app deployment=canary
+  ```
+
+  Get the deployment:
+  ```
+  kubectl get deployments -n canary --show-labels
+  ```
+
+  Or, you can add them manually.
+
+  Then, let's expose deployment with `service` something like:
+  ```
+  k expose -n canary deployment primary-app --name=canary-svc --type=NodePort --port=80 --target-port=80 --selector=deployment=canary
+  ```
+
+  The example of `svc` configuration:
+  ```
   TBD
+  ```
+
+  Then, create `canary` version of deployment with the next command:
+  ```
+  k create -n canary deployment canary-app --image=nginx:1.19 --port=80  --replicas=2 --dry-run=client -oyaml > canary-app-deploy.yaml
+  ```
+
+  Set a label with CLI, but you can add it manually:
+  ```
+  k label deployments.apps -n canary canary-app env=canary
+  k label deployments.apps -n canary canary-app deployment=canary
+  ```
+
+  Or, you can add them manually.
+
+  Now, checking stack, for this case you can use `curl` command in loop.
 
 </details>
 
@@ -659,6 +859,12 @@ Examples:
 
 **Useful non-official documentation**
 
+- [What is Kubernetes Blue Green Deployment?](https://www.geeksforgeeks.org/what-is-kubernetes-blue-green-deployment/)
+- [What Are Blue-Green Deployments in Kubernetes?](https://spacelift.io/blog/blue-green-deployment-kubernetes)
+- [Blue-Green Deployment Using Kubernetes](https://blog.stackademic.com/blue-green-deployment-using-kubernetes-4fbd023a19c5)
+- [Kubernetes Blue/Green Deployment Tutorial](https://github.com/ianlewis/kubernetes-bluegreen-deployment-tutorial)
+- [Blue-Green Deployment in Kubernetes](https://medium.com/@muppedaanvesh/blue-green-deployment-in-kubernetes-76f9153e0805)
+- [Blue-Green Deployments with Kubernetes: A Comprehensive Guide](https://medium.com/cloud-native-daily/blue-green-deployments-with-kubernetes-a-comprehensive-guide-5d196dad1976)
 - [Implementing Canary Deployment in Kubernetes](https://medium.com/@muppedaanvesh/implementing-canary-deployment-in-kubernetes-0be4bc1e1aca)
 - [Complete Guide On Kubernetes Canary Deployment](https://zeet.co/blog/kubernetes-canary-deployment)
 - [Create a Kubernetes Canary deployment](https://developer.harness.io/docs/continuous-delivery/deploy-srv-diff-platforms/kubernetes/kubernetes-executions/create-a-kubernetes-canary-deployment/)
@@ -700,6 +906,8 @@ Examples:
   k describe deploy my-deploy-1
   ```
 
+  TBD: Add maxSurge + maxUnavailable
+
 </details>
 
 - <details><summary>Example_2: Using rollbacks:</summary>
@@ -728,11 +936,12 @@ Examples:
 
 **Useful official documentation**
 
-- None
+- [Rolling update Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-update-deployment)
+- [Rolling back a Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-back-a-deployment)
 
 **Useful non-official documentation**
 
-- None
+- [Rolling Update & Recreate Deployment Strategies in Kubernetes](https://medium.com/@muppedaanvesh/rolling-update-recreate-deployment-strategies-in-kubernetes-%EF%B8%8F-327b59f27202)
 
 ### Use the Helm package manager to deploy existing packages
 
@@ -800,20 +1009,38 @@ Examples:
 
 ### Kustomize
 
-Examples:
-- <details><summary>Example_1: TBD:</summary>
+This part is out of the certification, but let's discuss the point a bit:
+- `kustomize` lets you customize raw, template-free YAML files for multiple purposes, leaving the original YAML untouched and usable as is.
+- `kustomize` targets kubernetes; it understands and can patch kubernetes style API objects. It's like make, in that what it does is declared in a file, and it's like sed, in that it emits edited text.
 
-  TBD
+So, kustomize is a command-line configuration manager for Kubernetes objects. Integrated with kubectl since 1.14, it allows you to make declarative changes to your configurations without touching a template. For example, you can combine pieces from different sources, keep your customizations -- or kustomizations, as the case may be -- in source control, and create overlays for specific situations. Kustomize enables you to do that by creating a file that ties everything together, or optionally includes "overrides" for individual parameters.
+
+Benefits of Using Kustomize:
+1. Reusability: Kustomize allows you to reuse one base file across all of your environments (development, staging, production) and then overlay unique specifications for each.
+2. Fast Generation: Since Kustomize has no templating language, you can use standard YAML to quickly declare your configurations.
+3. Easier to Debug: YAML itself is easy to understand and debug when things go wrong. Pair that with the fact that your configurations are isolated in patches, and you’ll be able to triangulate the root cause of performance issues in no time. Simply compare performance to your base configuration and any other variations that are running.
+
+Examples:
+- <details><summary>Example_1: Customization of kubernetes YAML configurations with kubectl kustomize:</summary>
+
+  To get help, use:
+  ```
+  kubectl kustomize -h
+  ```
 
 </details>
 
 **Useful official documentation**
 
-- None
+- [Kubernetes Kustomize] (https://kubernetes.io/docs/reference/kubectl/generated/kubectl_kustomize/)
 
 **Useful non-official documentation**
 
-- None
+- [Kustomize Tutorial: Creating a Kubernetes app out of multiple pieces](https://www.mirantis.com/blog/introduction-to-kustomize-part-1-creating-a-kubernetes-app-out-of-multiple-pieces#what)
+- [Kustomize: Simplifying Kubernetes Configuration Management](https://medium.com/@wadexu007/kustomize-simplifying-kubernetes-configuration-management-9b5d9c1169c3)
+- [Kustomize Tutorial: Comprehensive Guide For Beginners](https://devopscube.com/kustomize-tutorial/)
+- [Kubernetes Kustomize Tutorial](https://antonputra.com/kubernetes/kubernetes-kustomize-tutorial/)
+- [Kustomize examples](https://github.com/viadee/kustomize-examples)
 
 ## Application Observability and Maintenance - 15%
 
@@ -1466,7 +1693,7 @@ A custom resource is an object that extends the Kubernetes API or allows you to 
 Examples:
 - <details><summary>Example_1: Using Custom Resource Definition (CRD):</summary>
 
-  TBD. But it's out of that certificate
+  TBD. But it's out of that certificate.
 
 </details>
 
