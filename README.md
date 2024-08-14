@@ -706,7 +706,7 @@ Examples:
 
   Create Kubernetes `service` with command:
   ```
-  k expose -n blue-green deployment blue-app --name=blue-green-svc --type=NodePort --port=8088 --target-port=80 --selector="app=blue-app"
+  k expose -n blue-green deployment blue-app --name=blue-green-svc --type=NodePort --port=80 --target-port=80 --selector="app=blue-app"
   ```
 
   NOTE: Can be possible to use `ClusterIP`.
@@ -740,9 +740,19 @@ Examples:
   blue-green-svc   NodePort   10.97.239.43   <none>        80:32298/TCP   2m14s   app=blue-app,env=blue
   ```
 
+  NOTE: Now we can make `port-forward`, to expose svc on local env, for example:
+  ```
+  k port-forward -n blue-green services/blue-green-svc --address=0.0.0.0 8888:80
+  ```
+
   Then, create a new `green` version of deployment with the command:
   ```
-  k create -n blue-green deployment green-app --image=nginx:1.19 --port=80 --replicas=4 --dry-run=client -oyaml > green-app-deploy.yaml
+  k create -n blue-green deployment green-app --image=httpd:2.4 --port=80 --replicas=4 --dry-run=client -oyaml > green-app-deploy.yaml
+  ```
+
+  Set a label with CLI, but you can add it manually:
+  ```
+  k label deployments.apps -n blue-green green-app env=green
   ```
 
   An example of `green` version of deployment looks like:
@@ -758,15 +768,11 @@ Examples:
     name: green-app
     namespace: blue-green
   spec:
-    replicas: 1
+    replicas: 4
     selector:
       matchLabels:
         app: green-app
-    strategy:
-      rollingUpdate:
-        maxSurge: 25%
-        maxUnavailable: 25%
-      type: RollingUpdate
+    strategy: {}
     template:
       metadata:
         creationTimestamp: null
@@ -774,27 +780,35 @@ Examples:
           app: green-app
       spec:
         containers:
-        - image: nginx:1.19
-          name: nginx
+        - image: httpd:2.4
+          name: httpd
           ports:
           - containerPort: 80
           resources: {}
   status: {}
   ```
 
-  Set a label with CLI, but you can add it manually:
+  Check if `httpd` has started well:
   ```
-  k label deployments.apps -n blue-green green-app env=green
+  k port-forward -n blue-green deployments/green-app --address=0.0.0.0 9999:80
   ```
 
   Then, switch traffic from `blue` to `green`:
   ```
   kubectl patch service blue-green-svc -n blue-green -p '{"spec":{"selector":{"app": "green-app"}}}'
+
+  kubectl patch service blue-green-svc -n blue-green -p '{"metadata":{"labels":{"app": "green-app"}}}'
+  kubectl patch service blue-green-svc -n blue-green -p '{"metadata":{"labels":{"env": "green"}}}'
   ```
 
   Now, checking:
   ```
   k describe svc -n blue-green blue-green-svc
+  ```
+
+  NOTE: Now we can make `port-forward`, to expose svc on local env, for example:
+  ```
+  k port-forward -n blue-green services/blue-green-svc --address=0.0.0.0 9999:80
   ```
 
   Also, can get output from `curl` command.
@@ -3150,6 +3164,7 @@ kubectl -n app1 create secret tls local-domain-tls --key cert.key --cert cert.cr
 ## Videos
 
 1. [Kubernetes Certified Application Developer (CKAD) with Tests by Mumshad Mannambeth](https://www.udemy.com/course/certified-kubernetes-application-developer)
+2. [CKAD - Learn Concepts and Practice the Certified Kubernetes Application Developer (CKAD) Exam with Hand-On Labs](https://www.udemy.com/course/certified-kubernetes-application-developer-training)
 
 ## Containers and Kubernetes Application Developer
 
