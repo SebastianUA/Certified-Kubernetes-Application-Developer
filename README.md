@@ -37,6 +37,32 @@ Certified Kubernetes Application Developer (CKAD): Open new career doors – pro
 - cm = ConfigMaps
 - cj = CrobJobs
 
+## Get all resources in Kubernetes cluster
+
+To get all resources in all namespaces: 
+
+```
+kubectl get all --all-namespaces
+```
+
+Or, for specific namespace:
+```
+kubectl get all -n my-test-ns
+```
+
+## Formatting Output with kubectl
+
+The default output format for all kubectl commands is the human-readable plain-text format. The `-o` flag allows us to output the details in several different formats. An example of command:
+```
+kubectl [command] [TYPE] [NAME] -o <output_format>
+```
+
+Here are some of the commonly used formats:
+- `-o json` - Output a JSON formatted API object.
+- `-o name` - Print only the resource name and nothing else.
+- `-o wide` - Output in the plain-text format with any additional information.
+- `-o yaml` - Output a YAML formatted API object.
+
 ## Kubectl Autocomple and Alias
 
 Configure the Kubectl autocomplete and the `alias k=kubectl`:
@@ -641,6 +667,13 @@ Examples:
 
 ## Application Deployment - 20%
 
+ReplicaSets - A ReplicaSet’s purpose is to maintain a stable set of replica Pods running at any given time. As such, it is often used to guarantee the availability of a specified number of identical Pods.
+Deployments - A Deployment provides declarative updates for Pods ReplicaSets. You describe a desired state in a Deployment, and the Deployment Controller changes the actual state to the desired state at a controlled rate. You can define Deployments to create new ReplicaSets, or to remove existing Deployments and adopt all their resources with new Deployments.
+
+ReplicaSets VS Replication Controller
+
+Replica Set and Replication Controller do almost the same thing. Both of them ensure that a specified number of pod replicas are running at any given time. The difference comes with the usage of selectors to replicate pods. Replica Set use Set-Based selectors while replication controllers use Equity-Based selectors. ReplicaSets is the Replication Controller replacement.
+
 ### Use Kubernetes primitives to implement common deployment strategies (e.g. blue/green or canary)
 
 Examples:
@@ -911,6 +944,11 @@ Examples:
       app: primary-app
     type: NodePort
   status: {}
+  ```
+
+  Also, you can create service by kubectl command:
+  ```
+  k create service nodeport canary-svc --tcp=80:80 --node-port=30378 --dry-run=client -o yaml
   ```
 
   Getting svc:
@@ -2184,6 +2222,10 @@ Examples:
 
 ### Understand requests, limits, quotas
 
+If the node where a Pod is running has enough of a resource available, it's possible (and allowed) for a container to use more resource than its `request` for that resource specifies. However, a container is not allowed to use more than its resource `limit`.
+
+A resource quota, defined by a `ResourceQuota` object, provides constraints that limit aggregate resource consumption per namespace. It can limit the quantity of objects that can be created in a namespace by type, as well as the total amount of compute resources that may be consumed by resources in that namespace.
+
 Examples:
 - <details><summary>Example_1: Setting up resources requests for POD:</summary>
 
@@ -2984,7 +3026,7 @@ Examples:
   k run sec-con-pod --image=redis --dry-run=client -o yaml > sec-con-pod.yaml
   ```
 
-  Now, let's add some security context into the POD, for example:
+  Now, let's add some security context into the specific POD only, for example:
   ```
   apiVersion: v1
   kind: Pod
@@ -3006,7 +3048,7 @@ Examples:
   status: {}
   ```
 
-  Another way:
+  Another way to use `securityContext` under containers. It will be used for all containers:
   ```
   apiVersion: v1
   kind: Pod
@@ -3228,6 +3270,11 @@ Examples:
   k expose pod redis --port=6379 --name redis-service
   ```
 
+  Also, you can create service by `kubectl` command:
+  ```
+  k create service nodeport redis --tcp=6379:6379 --node-port=30008 --dry-run=client -o yaml
+  ```
+
 </details>
 
 - <details><summary>Example_2: Service with ClusterIP:</summary>
@@ -3251,7 +3298,7 @@ Examples:
   k expose pod redis --port=6379 --name redis-service --dry-run=client -o yaml > redis-service.yaml
   ```
 
-  Edit file with svc and change :
+  Edit file with svc and change:
   ```
   apiVersion: v1
   kind: Service
@@ -3273,6 +3320,11 @@ Examples:
     loadBalancer:
       ingress:
       - ip: 192.0.2.127
+  ```
+
+  Also, you can create service by `kubectl` command:
+  ```
+  k create service nodeport redis-service --tcp=6379:6379 --node-port=30009 --dry-run=client -o yaml
   ```
 
 </details>
@@ -3382,23 +3434,88 @@ kubectl -n app1 create secret tls local-domain-tls --key cert.key --cert cert.cr
 
 - <details><summary>Example_3: Create Ingress with Traefik:</summary>
 
-  Install Traefik controller:
+  Create a new NS:
   ```
-  TBD
+  kubectl create namespace traefik
   ```
 
-  An example of configuration:
+  Add repo:
   ```
+  helm repo add traefik https://helm.traefik.io/traefik
+  helm repo update
+  ```
+
+  You can use the following command to search for the latest available version of the Traefik Helm chart:
+  ```
+  helm search repo traefik/traefik --versions
+  ```
+
+  Install Traefik ingress controller in Kubernetes:
+  ```
+  helm install traefik  \
+    -n traefik \
+    --set dashboard.enabled=true \
+    traefik/traefik
+  ```
+
+  Exposing the Traefik dashboard:
+  ```
+  kubectl port-forward -n traefik $(kubectl get pods -n traefik --selector "app.kubernetes.io/name=traefik" --output=name) 9000:9000
+  ```
+
+  An example of configuration (Deployment, Service and Ingress):
+  ```
+  ---
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: my-custom-container
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: nginx
+    template:
+      metadata:
+        labels:
+          app: nginx
+      spec:
+        containers:
+          - name: my-container
+            imagePullPolicy: Always
+            image: ravindrasingh6969/my-app:latest
+            ports:
+              - containerPort: 80
+
+
+  ---
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: app-service
+    labels:
+      app: nginx
+  spec:
+    type: ClusterIP
+    selector:
+      app: nginx
+    ports:
+      - protocol: TCP
+        port: 80
+        targetPort: 80
+
+
   ---
   apiVersion: networking.k8s.io/v1
   kind: Ingress
   metadata:
-    name: traefik-ingress
-    namespace: traefik
+    name: foo
     annotations:
       kubernetes.io/ingress.class: traefik
       traefik.ingress.kubernetes.io/rule-type: PathPrefixStrip
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
   spec:
+    ingressClassName: traefik
     rules:
     - host: traefik.captainua.local
       http:
@@ -3407,11 +3524,17 @@ kubectl -n app1 create secret tls local-domain-tls --key cert.key --cert cert.cr
           pathType: Prefix
           backend:
             service:
-              name: traefik
+              name: app-service
               port:
                 number: 80
-  
   ```
+
+  Exposing the service:
+  ```
+  k port-forward -n default services/app-service --address=0.0.0.0 8888:80
+  ```
+
+  Open browser on `localhost:8888`
 
 </details>
 
