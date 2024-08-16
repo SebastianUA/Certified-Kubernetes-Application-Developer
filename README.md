@@ -226,6 +226,7 @@ Examples:
         parallelism: 3
         backoffLimit: 25
         activeDeadlineSeconds: 20
+        startingDeadlineSeconds: 10
         template:
           metadata:
             creationTimestamp: null
@@ -244,6 +245,8 @@ Examples:
   - `ttlSecondsAfterFinished`: A way to clean up finished Jobs (either Complete or Failed) automatically is to use a TTL mechanism provided by a TTL controller for finished resources, by specifying the `.spec.ttlSecondsAfterFinished` field of the Job. For example: `ttlSecondsAfterFinished: 100`.
   - `parallelism`: Determines the maximum number of Pods that can run in parallel. For example, if you set `parallelism` to `2`, Kubernetes will ensure that no more than two pods are running at the same time.
   - `completions`: Determines the desired number of successfully finished pods a Job should have. For example, if you set `completions` to `5`, Kubernetes will ensure that five Pods have completed successfully.
+  - `activeDeadlineSeconds`: The activeDeadlineSeconds applies to the duration of the job, no matter how many Pods are created. Once a Job reaches activeDeadlineSeconds , all of its running Pods are terminated and the Job status will become type: Failed with reason: DeadlineExceeded."
+  - `startingDeadlineSeconds` - `startingDeadlineSeconds` determines the deadline in seconds for starting the job if it misses its scheduled time. If a CronJob misses its scheduled time for any reason and more time than `startingDeadlineSeconds` has passed, the job will not be started.
 
   To delete job:
   ```
@@ -833,26 +836,98 @@ Examples:
   k label deployments.apps -n canary primary-app deployment=canary
   ```
 
+  The example of `primary-app` deployment looks like:
+  ```
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: primary-app
+      deployment: canary
+      env: primary
+    name: primary-app
+    namespace: canary
+  spec:
+    replicas: 4
+    selector:
+      matchLabels:
+        app: primary-app
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        labels:
+          app: primary-app
+      spec:
+        containers:
+        - image: nginx:1.19
+          name: nginx
+          ports:
+          - containerPort: 80
+            protocol: TCP
+          resources: {}
+        securityContext: {}
+  status: {}
+  ```
+
   Get the deployment:
   ```
   kubectl get deployments -n canary --show-labels
+  NAME          READY   UP-TO-DATE   AVAILABLE   AGE     LABELS
+  primary-app   4/4     4            4           5m19s   app=primary-app,deployment=canary,env=primary
   ```
 
   Or, you can add them manually.
 
   Then, let's expose deployment with `service` something like:
   ```
-  k expose -n canary deployment primary-app --name=canary-svc --type=NodePort --port=80 --target-port=80 --selector=deployment=canary
+  k expose -n canary deployment primary-app --name=canary-svc --type=NodePort --port=80 --target-port=80 --selector="app=primary-app"
   ```
 
-  The example of `svc` configuration:
+  NOTE: Can be possible to use `ClusterIP`.
+
+  Or, manually something like:
   ```
-  TBD
+  apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: primary-app
+      deployment: canary
+      env: primary
+    name: canary-svc
+    namespace: canary
+  spec:
+    ports:
+    - nodePort: 30378
+      port: 80
+      protocol: TCP
+      targetPort: 80
+    selector:
+      app: primary-app
+    type: NodePort
+  status: {}
+  ```
+
+  Getting svc:
+  ```
+  k get svc -n canary --show-labels
+  NAME         TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE   LABELS
+  canary-svc   NodePort   10.97.177.59   <none>        80:30378/TCP   53s   app=primary-app,deployment=canary,env=primary
+  ```
+
+  NOTE: Now we can make `port-forward`, to expose svc on local env, for example:
+  ```
+  k port-forward -n canary services/canary-svc --address=0.0.0.0 8888:80
   ```
 
   Then, create `canary` version of deployment with the next command:
   ```
-  k create -n canary deployment canary-app --image=nginx:1.19 --port=80  --replicas=2 --dry-run=client -oyaml > canary-app-deploy.yaml
+  k create -n canary deployment canary-app --image=httpd:2.4 --port=80 --replicas=2 --dry-run=client -oyaml > canary-app-deploy.yaml
   ```
 
   Set a label with CLI, but you can add it manually:
@@ -861,9 +936,90 @@ Examples:
   k label deployments.apps -n canary canary-app deployment=canary
   ```
 
-  Or, you can add them manually.
+  Now, need to edit created `canary` deployment and need to set proper labels from `primary` deployment:
+  ```
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: primary-app
+    name: canary-app
+    namespace: canary
+  spec:
+    replicas: 2
+    selector:
+      matchLabels:
+        app: primary-app
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: primary-app
+      spec:
+        containers:
+        - image: httpd:2.4
+          name: httpd
+          ports:
+          - containerPort: 80
+          resources: {}
+  status: {}
+  ```
 
-  Now, checking stack, for this case you can use `curl` command in loop.
+  Replace deployment:
+  ```
+  k replace -f canary-app-deploy.yaml --force
+  ```
+
+  Get pods with needed labels:
+  ```
+  k get po -n canary --show-labels
+  NAME                           READY   STATUS    RESTARTS   AGE     LABELS
+  canary-app-8447898f59-5nkxt    1/1     Running   0          7m43s   app=primary-app,pod-template-hash=8447898f59
+  canary-app-8447898f59-bjc2g    1/1     Running   0          7m43s   app=primary-app,pod-template-hash=8447898f59
+  primary-app-567d564c6b-5b6zw   1/1     Running   0          115s    app=primary-app,pod-template-hash=567d564c6b
+  primary-app-567d564c6b-n8d94   1/1     Running   0          51s     app=primary-app,pod-template-hash=567d564c6b
+  primary-app-567d564c6b-phc9j   1/1     Running   0          51s     app=primary-app,pod-template-hash=567d564c6b
+  primary-app-567d564c6b-zl4hc   1/1     Running   0          51s     app=primary-app,pod-template-hash=567d564c6b
+  ```
+
+  Or:
+  ```
+  k get po -n canary -l app=primary-app
+  NAME                           READY   STATUS    RESTARTS   AGE
+  canary-app-8447898f59-5nkxt    1/1     Running   0          9m29s
+  canary-app-8447898f59-bjc2g    1/1     Running   0          9m29s
+  primary-app-567d564c6b-5b6zw   1/1     Running   0          3m41s
+  primary-app-567d564c6b-n8d94   1/1     Running   0          2m37s
+  primary-app-567d564c6b-phc9j   1/1     Running   0          2m37s
+  primary-app-567d564c6b-zl4hc   1/1     Running   0          2m37s
+  ```
+
+  One more check - svc and deployments:
+  ```
+  k get deploy,svc -n canary -l app=primary-app
+  NAME                          READY   UP-TO-DATE   AVAILABLE   AGE
+  deployment.apps/canary-app    2/2     2            2           12m
+  deployment.apps/primary-app   4/4     4            4           4h27m
+
+  NAME                 TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+  service/canary-svc   NodePort   10.97.177.59   <none>        80:30378/TCP   23m
+  ```
+
+  Make `port-forward` on service:
+  ```
+  k port-forward -n canary services/canary-svc --address=0.0.0.0 8888:80
+  ```
+
+  Now, checking stack, for this case you can use `curl` command in loop:
+  ```
+  while true; do sleep 1; curl http://localhost:8888; done
+  ```
 
 </details>
 
@@ -920,8 +1076,6 @@ Examples:
   k describe deploy my-deploy-1
   ```
 
-  TBD: Add maxSurge + maxUnavailable
-
 </details>
 
 - <details><summary>Example_2: Using rollbacks:</summary>
@@ -944,6 +1098,57 @@ Examples:
   Or:
   ```
   kubectl rollout undo deployment my-deploy-1 --to-revision=1
+  ```
+
+</details>
+
+- <details><summary>Example_3: Using maxSurge + maxUnavailable in Deployments:</summary>
+
+  - `maxSurge` is an optional field that specifies the maximum number of Pods that can be created over the desired number of Pods. The value can be an absolute number (for example, 5) or a percentage of desired Pods (for example, 10%). The value cannot be 0 if MaxUnavailable is 0. The absolute number is calculated from the percentage by rounding up. The default value is 25%.
+  - `maxUnavailable` is an optional field that specifies the maximum number of Pods that can be unavailable during the update process. The value can be an absolute number (for example, 5) or a percentage of desired Pods (for example, 10%). The absolute number is calculated from percentage by rounding down. The value cannot be 0 if .spec.strategy.rollingUpdate.maxSurge is 0. The default value is 25%.
+
+  Let's create a new deployment:
+  ```
+  k create deployment my-deploy --image=httpd:2.4 --port=80 --replicas=7 --dry-run=client -oyaml > my-deploy.yaml
+  ```
+
+  Open `my-deploy.yaml` file and put `maxSurge` & `maxUnavailable` parameters:
+  ```
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: my-deploy
+    name: my-deploy
+  spec:
+    replicas: 7
+    selector:
+      matchLabels:
+        app: my-deploy
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 2
+        maxSurge: 2
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: my-deploy
+      spec:
+        containers:
+        - image: httpd:2.4
+          name: httpd
+          ports:
+          - containerPort: 80
+          resources: {}
+  status: {}
+  ```
+
+  Apply the file:
+  ```
+  k apply -f ./my-deploy.yaml
   ```
 
 </details>
@@ -1707,7 +1912,73 @@ A custom resource is an object that extends the Kubernetes API or allows you to 
 Examples:
 - <details><summary>Example_1: Using Custom Resource Definition (CRD):</summary>
 
-  TBD. But it's out of that certificate.
+  CRDs offer several benefits and use cases within Kubernetes environments:
+  - Domain-specific abstractions: CRDs allow users to define resources that align closely with their specific domain or application requirements. This enables developers to work at a higher level of abstraction, increasing productivity and reducing complexity.
+  - Simplified API: CRDs simplify the management and configuration of custom resources by providing a declarative API. This allows users to interact with custom resources using familiar Kubernetes concepts, such as creating, updating, deleting, and querying resources through the Kubernetes API server.
+  - Extensibility: Kubernetes provides a solid foundation, but not every use case can be fully addressed by the built-in resources. CRDs offer a flexible mechanism for extending Kubernetes with custom functionality, empowering users to build tailored solutions on top of the platform.
+
+  This topic's out of that certificate! But let's take a look at the simple example.
+
+  Create a CustomResourceDefinition manifest file for an Operator with the following specifications. Open `operator-crd.yml` and put the next:
+  ```
+  apiVersion: apiextensions.k8s.io/v1
+  kind: CustomResourceDefinition
+  metadata:
+    # name must match the spec fields below, and be in the form: <plural>.<group>
+    name: operators.stable.example.com
+  spec:
+    group: stable.example.com
+    versions:
+      - name: v1
+        served: true
+        # One and only one version must be marked as the storage version.
+        storage: true
+        schema:
+          openAPIV3Schema:
+            type: object
+            properties:
+              spec:
+                type: object
+                properties:
+                  email:
+                    type: string
+                  name:
+                    type: string
+                  age:
+                    type: integer
+    scope: Namespaced
+    names:
+      plural: operators
+      singular: operator
+      # kind is normally the CamelCased singular type. Your resource manifests use this.
+      kind: Operator
+      shortNames:
+      - op
+  ```
+
+  Apply the configureation:
+  ```
+  k apply -f operator-crd.yml
+  ```
+
+  Create custom object from the CRD:
+  ```
+  apiVersion: stable.example.com/v1
+  kind: Operator
+  metadata:
+    name: operator-sample
+  spec:
+    email: operator-sample@stable.example.com
+    name: "operator sample"
+    age: 30
+  ```
+
+  Listing operator:
+  ```
+  kubectl get operators
+  kubectl get operator
+  kubectl get op
+  ```
 
 </details>
 
@@ -1717,7 +1988,8 @@ Examples:
 
 **Useful non-official documentation**
 
-- None
+- [A Hands-On Guide to Kubernetes Custom Resource Definitions (CRDs) With a Practical Example](https://medium.com/@muppedaanvesh/a-hand-on-guide-to-kubernetes-custom-resource-definitions-crds-with-a-practical-example-%EF%B8%8F-84094861e90b)
+- []()
 
 ### Understand authentication, authorization and admission controllers
 
@@ -3109,6 +3381,11 @@ kubectl -n app1 create secret tls local-domain-tls --key cert.key --cert cert.cr
 </details>
 
 - <details><summary>Example_3: Create Ingress with Traefik:</summary>
+
+  Install Traefik controller:
+  ```
+  TBD
+  ```
 
   An example of configuration:
   ```
