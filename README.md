@@ -36,6 +36,7 @@ Certified Kubernetes Application Developer (CKAD): Open new career doors – pro
 - sa = Service Accounts
 - cm = ConfigMaps
 - cj = CrobJobs
+- ep = Endpoints
 
 ## Get all resources in Kubernetes cluster
 
@@ -253,6 +254,7 @@ Examples:
         backoffLimit: 25
         activeDeadlineSeconds: 20
         startingDeadlineSeconds: 10
+        concurrencyPolicy: 3
         template:
           metadata:
             creationTimestamp: null
@@ -273,6 +275,9 @@ Examples:
   - `completions`: Determines the desired number of successfully finished pods a Job should have. For example, if you set `completions` to `5`, Kubernetes will ensure that five Pods have completed successfully.
   - `activeDeadlineSeconds`: The activeDeadlineSeconds applies to the duration of the job, no matter how many Pods are created. Once a Job reaches activeDeadlineSeconds , all of its running Pods are terminated and the Job status will become type: Failed with reason: DeadlineExceeded."
   - `startingDeadlineSeconds` - `startingDeadlineSeconds` determines the deadline in seconds for starting the job if it misses its scheduled time. If a CronJob misses its scheduled time for any reason and more time than `startingDeadlineSeconds` has passed, the job will not be started.
+  - `concurrencyPolicy` - field is also optional. It specifies how to treat concurrent executions of a Job that is created by this CronJob. Allow (default): The CronJob allows concurrently running Jobs. Forbid: The CronJob does not allow concurrent runs; if it is time for a new Job run and the previous Job run hasn't finished yet, the CronJob skips the new Job run. Also note that when the previous Job run finishes, .spec.startingDeadlineSeconds is still taken into account and may result in a new Job run. Replace: If it is time for a new Job run and the previous Job run hasn't finished yet, the CronJob replaces the currently running Job run with a new Job run.
+  - `successfulJobsHistoryLimit` - This field specifies the number of successful finished jobs to keep. The default value is 3. Setting this field to 0 will not keep any successful jobs.
+  - `failedJobsHistoryLimit` - This field specifies the number of failed finished jobs to keep. The default value is 1. Setting this field to 0 will not keep any failed jobs.
 
   To delete job:
   ```
@@ -677,7 +682,7 @@ Replica Set and Replication Controller do almost the same thing. Both of them en
 ### Use Kubernetes primitives to implement common deployment strategies (e.g. blue/green or canary)
 
 Examples:
-- <details><summary>Example_1: Using Blue/Green deployment:</summary>
+- <details><summary>Example_1: Using Blue/Green deployment (example_1):</summary>
 
   I would like to create `NS`:
   ```
@@ -769,6 +774,11 @@ Examples:
   status: {}
   ```
 
+  NOTE: If you want to patch service, you can use the next command:
+  ```
+  k patch svc -n blue-green blue-green-svc -p '{"spec":{"type":"NodePort"}}'
+  ```
+
   Getting svc:
   ```
   k get svc -n blue-green --show-labels
@@ -851,7 +861,151 @@ Examples:
 
 </details>
 
-- <details><summary>Example_2: Using Canary deployment:</summary>
+- <details><summary>Example_2: Using Blue/Green deployment (example_2):</summary>
+
+  The full stack (blue-deployment + geen-deployment + service) in one `b-g-deployment.yaml` file:
+  ```
+  ---
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: blue-deployment
+    labels:
+      app: my-app
+  spec:
+    replicas: 3
+    selector:
+      matchLabels:
+        app: my-app
+        version: v1
+    template:
+      metadata:
+        labels:
+          app: my-app
+          version: v1
+      spec:
+        containers:
+        - name: nginx
+          image: nginx
+          ports:
+          - containerPort: 80
+          volumeMounts:
+          - name: workdir
+            mountPath: /usr/share/nginx/html
+        initContainers:
+        - name: install
+          image: busybox:1.28
+          command:
+          - /bin/sh
+          - -c
+          - "echo version-1 > /work-dir/index.html"
+          volumeMounts:
+          - name: workdir
+            mountPath: "/work-dir"
+        volumes:
+        - name: workdir
+          emptyDir: {}
+
+  ---
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: blue-green-svc
+    labels:
+      app: my-app
+  spec:
+    type: ClusterIP
+    ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    selector:
+      app: my-app
+      version: v1
+
+  ---
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: green-deployment
+    labels:
+      app: my-app
+  spec:
+    replicas: 3
+    selector:
+      matchLabels:
+        app: my-app
+        version: v2
+    template:
+      metadata:
+        labels:
+          app: my-app
+          version: v2
+      spec:
+        containers:
+        - name: nginx
+          image: nginx
+          ports:
+          - containerPort: 80
+          volumeMounts:
+          - name: workdir
+            mountPath: /usr/share/nginx/html
+        initContainers:
+        - name: install
+          image: busybox:1.28
+          command:
+          - /bin/sh
+          - -c
+          - "echo version-2 > /work-dir/index.html"
+          volumeMounts:
+          - name: workdir
+            mountPath: "/work-dir"
+        volumes:
+        - name: workdir
+          emptyDir: {}
+  ```
+  Apply the stack:
+  ```
+  k apply -f b-g-deployment.yaml
+  ```
+
+  Make port-forvarding:
+  ```
+  k port-forward services/my-app-svc --address=0.0.0.0 8888:80
+  ```
+
+  Now, you can use `curl` and test your deployment:
+  ```
+  curl http://localhost:8888
+  version-1
+  ```
+
+  Or, test if the deployment was successful from within a Pod:
+  ```
+  kubectl run -it --rm --restart=Never busybox --image=gcr.io/google-containers/busybox --command -- wget -qO- blue-green-svc
+  ```
+
+  Then, need to edit the `svc` to start using `green version of deployment`. You can use manual way or:
+  ```
+  kubectl patch service my-app-svc -p '{"spec":{"selector":{"version": "v2"}}}'
+  ```
+
+  Make port-forvarding:
+  ```
+  k port-forward services/my-app-svc --address=0.0.0.0 8888:80
+  ```
+
+  Now, you can use `curl` and test your deployment:
+  ```
+  curl http://localhost:8888
+  version-2
+  ```
+
+  It's working good!
+
+</details>
+
+- <details><summary>Example_3: Using Canary deployment (example_1):</summary>
 
   I would like to create `NS`:
   ```
@@ -1058,6 +1212,161 @@ Examples:
   ```
   while true; do sleep 1; curl http://localhost:8888; done
   ```
+
+</details>
+
+- <details><summary>Example_4: Using Canary deployment (example_2):</summary>
+
+  The full stack (primary-deployment + canary-deployment + service) in one `canary-deployment.yaml` file:
+  ```
+  ---
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: primary-deployment
+    labels:
+      app: my-app
+  spec:
+    replicas: 3
+    selector:
+      matchLabels:
+        app: my-app
+        version: v1
+    template:
+      metadata:
+        labels:
+          app: my-app
+          version: v1
+      spec:
+        containers:
+        - name: nginx
+          image: nginx
+          ports:
+          - containerPort: 80
+          volumeMounts:
+          - name: workdir
+            mountPath: /usr/share/nginx/html
+        initContainers:
+        - name: install
+          image: busybox:1.28
+          command:
+          - /bin/sh
+          - -c
+          - "echo version-1 > /work-dir/index.html"
+          volumeMounts:
+          - name: workdir
+            mountPath: "/work-dir"
+        volumes:
+        - name: workdir
+          emptyDir: {}
+
+  ---
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: canary-svc
+    labels:
+      app: my-app
+  spec:
+    type: ClusterIP
+    ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    selector:
+      app: my-app
+
+  ---
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: canary-deployment
+    labels:
+      app: my-app
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: my-app
+        version: v2
+    template:
+      metadata:
+        labels:
+          app: my-app
+          version: v2
+      spec:
+        containers:
+        - name: nginx
+          image: nginx
+          ports:
+          - containerPort: 80
+          volumeMounts:
+          - name: workdir
+            mountPath: /usr/share/nginx/html
+        initContainers:
+        - name: install
+          image: busybox:1.28
+          command:
+          - /bin/sh
+          - -c
+          - "echo version-2 > /work-dir/index.html"
+          volumeMounts:
+          - name: workdir
+            mountPath: "/work-dir"
+        volumes:
+        - name: workdir
+          emptyDir: {}
+  ```
+
+  Apply stacks:
+  ```
+  k apply -f canary-deployment.yaml
+  ```
+
+  Make port-forvarding:
+  ```
+  k port-forward services/canary-svc --address=0.0.0.0 8888:80
+  ```
+
+  Now, you can use `curl` and test your deployment:
+  ```
+  curl http://localhost:8888
+  version-1
+  version-1
+  version-1
+  version-1
+  version-1
+  version-1
+  version-1
+  version-2
+  version-1
+  version-1
+  version-1
+  version-1
+  version-1
+  version-1
+  ```
+
+  Or, test if the deployment was successful from within a Pod:
+  ```
+  kubectl run -it --rm --restart=Never busybox --image=gcr.io/google-containers/busybox --command -- wget -qO- canary-svc
+  version-1
+  version-1
+  version-1
+  version-1
+  version-1
+  version-1
+  version-1
+  version-2
+  version-1
+  version-1
+  version-1
+  version-1
+  version-1
+  version-1
+  ```
+
+  It's working good!
 
 </details>
 
@@ -1414,6 +1723,8 @@ Examples:
         httpGet:
           path: /
           port: 8080
+        initialDelaySeconds: 2
+        periodSeconds: 8
       resources: {}
     dnsPolicy: ClusterFirst
     restartPolicy: Always
@@ -1464,7 +1775,7 @@ Examples:
           - "localhost"
           - "8080"
         initialDelaySeconds: 5
-        periodSeconds: 5  
+        periodSeconds: 5
       resources: {}
     dnsPolicy: ClusterFirst
     restartPolicy: Always
@@ -1555,7 +1866,9 @@ Examples:
       livenessProbe:
         httpGet:
           path: /
-          port: 8080   
+          port: 8080
+        initialDelaySeconds: 5
+        periodSeconds: 30 
       resources: {}
     dnsPolicy: ClusterFirst
     restartPolicy: Always
@@ -1697,7 +2010,9 @@ Examples:
       startupProbe:
         httpGet:
           path: /
-          port: 8080  
+          port: 8080
+        initialDelaySeconds: 3
+        periodSeconds: 15
       resources: {}
     dnsPolicy: ClusterFirst
     restartPolicy: Always
@@ -2104,11 +2419,6 @@ Examples:
   k get roles
   ```
 
-  To view cluster roles in Kubernetes:
-  ```
-  k get clusterrole
-  ```
-
   Create role & rolebinding:
   ```
   k create role role_name --verb=get,list,watch --resource=pods
@@ -2121,9 +2431,60 @@ Examples:
   k auth can-i list pods --as captain -n default
   ```
 
+  One more example with role, open `read-only-role.yaml` file and put:
+  ```
+  ---
+  apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    name: read-only
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    - services
+    verbs:
+    - list
+    - get
+    - watch
+  - apiGroups:
+    - apps
+    resources:
+    - deployments
+    verbs:
+    - list
+    - get
+    - watch
+
+  ---
+  apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    name: read-only-binding
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: read-only
+  subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: captainua
+  ```
+
+  Apply the file:
+  ```
+  k apply -f read-only-role.yaml
+  ```
+
 </details>
 
 - <details><summary>Example_4: Using RBAC to work with Kubernetes (cluster roles and cluster role bindings):</summary>
+
+  To view cluster roles in Kubernetes:
+  ```
+  k get clusterrole
+  ```
 
   Create clusterrole & clusterrolebinding:
   ```
@@ -2140,6 +2501,11 @@ Examples:
 </details>
 
 - <details><summary>Example_5: Working with Service Account and RBAC:</summary>
+
+  Get cluster roles:
+  ```
+  k get clusterrole
+  ```
 
   Create Service Account and RBAC:
   ```
@@ -2316,7 +2682,17 @@ Examples:
   k create ns quotas-ns
   ```
 
-  Create quotas with `quotas-ns` name for that created NS:
+  Create `ResourceQuota` for `quotas-ns` namespace:
+  ```
+  k create quota -n quotas-ns my-rq --hard=cpu=1,memory=1G,pods=2 --dry-run=client -o yaml
+  ```
+
+  Or, you can use the next example:
+  ```
+  k create quota my-rq -n quotas-ns --hard=requests.cpu=1,requests.memory=1Gi,limits.cpu=2,limits.memory=2Gi
+  ```
+
+  Or, let's create quotas with `quotas-ns` name for that created NS (manual way). Open `quotas-ns.yaml` file and put:
   ```
   apiVersion: v1
   kind: ResourceQuota
@@ -2387,19 +2763,26 @@ Examples:
   kind: LimitRange
   metadata:
     name: ns-memory-limit
-    namespace: one
+    namespace: limitrange
   spec:
     limits:
     - max:  max and min define the limit range
         memory: "500Mi"
+        cpu: "200m"
       min:
         memory: "100Mi"
+        cpu: "200m"
       type: Container
   ```
 
   Apply the file:
   ```
   kubectl apply -f ns-memory-limit.yaml
+  ```
+
+  Describe `limitrange`:
+  ```
+  k describe limitrange ns-memory-limit -n limitrange
   ```
 
   Create an nginx pod that requests 250Mi of memory in the limitrange namespace:
@@ -2411,7 +2794,7 @@ Examples:
     labels:
       run: nginx
     name: nginx
-    namespace: one
+    namespace: limitrange
   spec:
     containers:
     - image: nginx
@@ -3061,6 +3444,7 @@ Examples:
     securityContext:
       runAsUser: 1000
       runAsGroup: 1000
+      runAsNonRoot: true
     containers:
     - image: redis
       name: sec-con-pod
