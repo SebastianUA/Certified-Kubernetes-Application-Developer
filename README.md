@@ -25,18 +25,18 @@ Certified Kubernetes Application Developer (CKAD): Open new career doors – pro
 
 ## Shortcuts / Aliases
 
-- po = PODs
-- rs = ReplicaSets
-- deploy = Deployments
-- svc = Services
-- ns = Namespaces
-- netpol = Network Policies
-- pv = Persistent Volumes
-- pvc = Persistent Volume Claims
-- sa = Service Accounts
-- cm = ConfigMaps
-- cj = CrobJobs
-- ep = Endpoints
+- `po` = Pods
+- `rs` = ReplicaSets
+- `deploy` = Deployments
+- `svc` = Services
+- `ns` = Namespaces
+- `netpol` = Network Policies
+- `pv` = Persistent Volumes
+- `pvc` = Persistent Volume Claims
+- `sa` = Service Accounts
+- `cm` = ConfigMaps
+- `cj` = CrobJobs
+- `ep` = Endpoints
 
 ## Get all resources in Kubernetes cluster
 
@@ -1482,7 +1482,7 @@ Examples:
 ### Understand Deployments and how to perform rolling updates
 
 Examples:
-- <details><summary>Example_1: Using rolling updates:</summary>
+- <details><summary>Example_1: Using rolling updates (deprecated way):</summary>
 
   1. Make changes in YAML file and run:
     ```
@@ -1490,7 +1490,7 @@ Examples:
     ```
   2. Update only needed param, for example - `image` only:
     ```
-    k set image deployment/my-deploy-1 nginx-container=nginx:1.19
+    k set image deployment/my-deploy-1 nginx-container=nginx:1.19 --record
     ```
 
     Where:
@@ -1505,8 +1505,10 @@ Examples:
 
   Let's update image:
   ```
-  kubectl set image deployment my-deploy-1 nginx=nginx:1.18
+  kubectl set image deployment my-deploy-1 nginx=nginx:1.18 --record
   ```
+
+  NOTE: Flag `--record` has been deprecated, `--record` will be removed in the future
 
   Getting events from deployment:
   ```
@@ -1515,7 +1517,52 @@ Examples:
 
 </details>
 
-- <details><summary>Example_2: Using rollbacks:</summary>
+- <details><summary>Example_2: Using rolling updates (new one):</summary>
+
+  Create the deployment:
+  ```
+  k create deployment nginx --image=nginx:1.16.0 --replicas=1
+  ```
+
+  Check the history of the `nginx` deployment:
+  ```
+  k rollout history deployment nginx
+  
+  deployment.apps/nginx
+  REVISION  CHANGE-CAUSE
+  1         <none>
+
+  ```
+
+  Update the image on deployment:
+  ```
+  k set image deployment/nginx nginx=nginx:latest
+  ```
+
+  Annotate the deployment now and create the history:
+  ```
+  k annotate deployment nginx kubernetes.io/change-cause="version change to 1.16.0 to latest" --overwrite=true
+  ```
+
+  Check the history
+  ```
+  k rollout history deployment nginx
+
+  deployment.apps/nginx
+  REVISION  CHANGE-CAUSE
+  1         <none>
+  2         version change to 1.16.0 to latest
+
+  ```
+
+  Revert changes back, for example:
+  ```
+  k rollout undo deployment nginx --to-revision=1
+  ```
+
+</details>
+
+- <details><summary>Example_3: Using rollbacks:</summary>
 
   Rollout command:
   ```
@@ -1539,7 +1586,7 @@ Examples:
 
 </details>
 
-- <details><summary>Example_3: Using maxSurge + maxUnavailable in Deployments:</summary>
+- <details><summary>Example_4: Using maxSurge + maxUnavailable in Deployments:</summary>
 
   - `maxSurge` is an optional field that specifies the maximum number of Pods that can be created over the desired number of Pods. The value can be an absolute number (for example, 5) or a percentage of desired Pods (for example, 10%). The value cannot be 0 if MaxUnavailable is 0. The absolute number is calculated from the percentage by rounding up. The default value is 25%.
   - `maxUnavailable` is an optional field that specifies the maximum number of Pods that can be unavailable during the update process. The value can be an absolute number (for example, 5) or a percentage of desired Pods (for example, 10%). The absolute number is calculated from percentage by rounding down. The value cannot be 0 if .spec.strategy.rollingUpdate.maxSurge is 0. The default value is 25%.
@@ -1654,14 +1701,13 @@ Examples:
 
 </details>
 
-
 **Useful official documentation**
 
 - None
 
 **Useful non-official documentation**
 
-- None
+- [Installing Helm](https://helm.sh/docs/intro/install/)
 
 ### Kustomize
 
@@ -1730,6 +1776,17 @@ Examples:
   k api-resources --namespaced=false
   ```
 
+  Get `API` resources which support `list` and `get` type of verbs:
+  ```
+  k api-resources --verbs=list,get
+  ```
+
+  Print the supported API resources with a specific APIGroup:
+  ```
+  k api-resources --api-group=extensions
+  k api-resources --api-group=rbac.authorization.k8s.io
+  ```
+
 </details>
 
 - <details><summary>Example_2: Enabling/Disabling API Groups in Kubernetes:</summary>
@@ -1765,7 +1822,6 @@ Examples:
   ```
   kubectl-convert -f ingress-old.yaml --output-version networking.k8s.io/v1
   ```
-
 
 </details>
 
@@ -2279,6 +2335,11 @@ Examples:
   k logs <DEPLOYMENT_NAME_or_ID>
   ```
 
+  Get logs newer than a relative duration like `1h`:
+  ```
+  k logs --since=1m deployments/nginx
+  ```
+
 </details>
 
 **Useful official documentation**
@@ -2302,6 +2363,11 @@ Examples:
   To get logs from deployment, use:
   ```
   k logs <DEPLOYMENT_NAME_or_ID>
+  ```
+
+  Get logs newer than a relative duration like `1h`:
+  ```
+  k logs --since=1m deployments/nginx
   ```
 
 </details>
@@ -3402,7 +3468,6 @@ Examples:
 
 </details>
 
-
 **Useful official documentation**
 
 - [Configure pod with secret](https://kubernetes.io/docs/concepts/configuration/secret)
@@ -3639,7 +3704,6 @@ Examples:
   ```
 
 </details>
-
 
 **Useful official documentation**
 
@@ -3931,11 +3995,12 @@ Examples:
         number: 80
   ```
 
-**NOTE:** You should create the needed <b>local-domain-tls</b> secret for Ingress with certifications:
-```
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout cert.key -out cert.crt -subj "/CN=local.domail.name/O=local.domail.name"
-kubectl -n app1 create secret tls local-domain-tls --key cert.key --cert cert.crt
-```
+  **NOTE:** You should create the needed <b>local-domain-tls</b> secret for Ingress with certifications:
+  
+  ```
+  openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout cert.key -out cert.crt -subj "/CN=local.domail.name/O=local.domail.name"
+  kubectl -n app1 create secret tls local-domain-tls --key cert.key --cert cert.crt
+  ```
 
 </details>
 
@@ -4066,7 +4131,7 @@ kubectl -n app1 create secret tls local-domain-tls --key cert.key --cert cert.cr
 
 ## Books
 
-1. None
+1. [Some useful books has stored in folder](https://github.com/SebastianUA/Certified-Kubernetes-Application-Developer/tree/main/hands-on/books)
 
 ## Videos
 
