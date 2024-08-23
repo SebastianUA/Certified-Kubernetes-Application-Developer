@@ -42,19 +42,19 @@ Certified Kubernetes Application Developer (CKAD): Open new career doors – pro
 
 To get all resources in all namespaces: 
 
-```
+```shell
 kubectl get all --all-namespaces
 ```
 
 Or, for specific namespace:
-```
+```shell
 kubectl get all -n my-test-ns
 ```
 
 ## Formatting Output with kubectl
 
 The default output format for all kubectl commands is the human-readable plain-text format. The `-o` flag allows us to output the details in several different formats. An example of command:
-```
+```shell
 kubectl [command] [TYPE] [NAME] -o <output_format>
 ```
 
@@ -67,7 +67,7 @@ Here are some of the commonly used formats:
 ## Kubectl Autocomple and Alias
 
 Configure the Kubectl autocomplete and the `alias k=kubectl`:
-```
+```shell
 source <(kubectl completion bash)  setup autocomplete in bash into the current shell, bash-completion package should be installed first.
 echo "source <(kubectl completion bash)" >> ~/.bashrc  add autocomplete permanently to your bash shell.
 ```
@@ -75,7 +75,7 @@ echo "source <(kubectl completion bash)" >> ~/.bashrc  add autocomplete permanen
 NOTE: If you use `ZSH` or another shell, modify the correct path to configuration if so.
 
 You can also use a shorthand alias for kubectl that also works with completion:
-```
+```shell
 alias k=kubectl
 complete -F __start_kubectl k
 ```
@@ -91,7 +91,7 @@ Examples:
 - <details><summary>Example_1: Build and modify container images with Docker:</summary>
 
   An example of Dockerfile:
-  ```
+  ```dockerfile
   FROM ubuntu
   MAINTAINER Vitalii <vitaliy.natarov@yahoo.com>
   
@@ -109,17 +109,17 @@ Examples:
   ```
 
   To build a new image, you can use:
-  ```
+  ```shell
   docker build Dockerfile -t my-custom-image
   ```
 
   If you want to add environment variables:
-  ```
+  ```shell
   docker run -e ENV=dev my-custom-image
   ```
 
   To push image, use:
-  ```
+  ```shell
   docker push my-custom-image
   ```
 
@@ -128,7 +128,7 @@ Examples:
 - <details><summary>Example_2: Build and modify container images with Podman:</summary>
 
   An example of Dockerfile:
-  ```
+  ```dockerfile
   FROM ubuntu
   MAINTAINER Vitalii <vitaliy.natarov@yahoo.com>
   
@@ -146,22 +146,21 @@ Examples:
   ```
 
   To build a new image, you can use:
-  ```
+  ```shell
   podman build Dockerfile -t my-custom-image
   ```
 
   If you want to add environment variables:
-  ```
+  ```shell
   podman run -e ENV=dev my-custom-image
   ```
 
   To push image, use:
-  ```
+  ```shell
   podman push my-custom-image
   ```
 
 </details>
-
 
 **Useful official documentation**
 
@@ -172,24 +171,24 @@ Examples:
 - [Docker documentation](https://docs.docker.com/build)
 - [Podman documentation](https://docs.podman.io/en/latest/Introduction.html)
 
- ### Choose and use the right workload resource (Deployment, DaemonSet, CronJob, etc.)
+### Choose and use the right workload resource (Deployment, DaemonSet, CronJob, etc.)
 
 Examples:
 
 - <details><summary>Example_1: Working with Job:</summary>
 
   To get jobs, use:
-  ```
+  ```shell
   k get jobs.batch
   ```
 
   Let's create a new job. Set `my-job-1` name:
-  ```
+  ```shell
   k create job my-job-1 --image=nginx --dry-run=client -o yaml > my-job-1.yaml
   ```
 
   Open file for edit and let's set `backoffLimit` to `25`. Also, set `parallelism` to `4`:
-  ```
+  ```yaml
   apiVersion: batch/v1
   kind: Job
   metadata:
@@ -218,7 +217,7 @@ Examples:
   - `activeDeadlineSeconds`: The activeDeadlineSeconds applies to the duration of the job, no matter how many Pods are created. Once a Job reaches activeDeadlineSeconds , all of its running Pods are terminated and the Job status will become type: Failed with reason: DeadlineExceeded."
 
   To delete job:
-  ```
+  ```shell
   k delete jobs.batch my-job-1
   ```
 
@@ -227,17 +226,17 @@ Examples:
 - <details><summary>Example_2: Working with Cronjob:</summary>
 
   To get cronjobs, use:
-  ```
+  ```shell
   k get cronjobs
   ```
 
   Let's create a new job: 
-  ```
+  ```shell
   k create cronjob my-cronjob-1 --image=nginx --schedule='00 00 * * *' --dry-run=client -o yaml > my-cronjob-1.yaml
   ```
 
   Set `my-cronjob-1` name. Set `backoffLimit` to `25`. Also, set `parallelism` to `4` and set `completions` to `3`:
-  ```
+  ```yaml
   apiVersion: batch/v1
   kind: CronJob
   metadata:
@@ -280,7 +279,7 @@ Examples:
   - `failedJobsHistoryLimit` - This field specifies the number of failed finished jobs to keep. The default value is 1. Setting this field to 0 will not keep any failed jobs.
 
   To delete job:
-  ```
+  ```shell
   k delete cronjobs my-cronjob-1
   ```
 
@@ -289,24 +288,24 @@ Examples:
 - <details><summary>Example_3: Create Job from CronJob:</summary>
 
   Check if jronjob created already:
-  ```
+  ```shell
   k get cronjob
   ```
 
   Let's create `job` from `cronjob`, for example:
-  ```
+  ```shell
   k create job my-job-from-cronjob --from=cronjob/my-cronjob-1 --dry-run=client -oyaml > my-job-from-cronjob.yaml
   ```
 
   If you need to add/change something, you can edit that file.
 
   To apply, use:
-  ```
+  ```shell
   k apply -f my-job-from-cronjob.yaml
   ```
 
   Get job:
-  ```
+  ```shell
   k get jobs
   ```
 
@@ -315,32 +314,32 @@ Examples:
 - <details><summary>Example_4: Working with DaemonSet:</summary>
 
   To get DaemonSet, for example in `prod` namespace:
-  ```
+  ```shell
   k get deamonset -n prod
   ```
 
   Edit and update the definition of one or more daemonset:
-  ```
+  ```shell
   k edit ds <deamonset_name>
   ```
 
   Delete a daemonset:
-  ```
+  ```shell
   k delete deamonset <deamonset_name>
   ```
 
   Create a new daemonset:
-  ```
+  ```shell
   k create deamonset <deamonset_name>
   ```
 
   Manage the rollout of a daemonset:
-  ```
+  ```shell
   k rollout daemonset
   ```
 
   Display the detailed state of daemonsets within a namespace:
-  ```
+  ```shell
   k describe ds <deamonset_name> -n <namespace_name>
   ```
 
@@ -349,38 +348,38 @@ Examples:
 - <details><summary>Example_5: Working with Deployment:</summary>
 
   To get Deployment, for example in `prod` namespace:
-  ```
+  ```shell
   k get deployment -n prod
   ```
 
   Or, if you have labels:
-  ```
+  ```shell
   k get deployment -n prod -l env=dev
   k get deployment -n prod --selector env=dev
   ```
 
   Display the detailed state of deploy within a namespace:
-  ```
+  ```shell
   k describe deploy <deployment_name> -n <namespace_name>
   ```
 
   Edit and update the definition of one or more deploy:
-  ```
+  ```shell
   k edit deploy <deployment_name>
   ```
 
   Delete a deploy:
-  ```
+  ```shell
   k delete deploy <deployment_name> -n <namespace_name>
   ```
 
   Create one a new deployment:
-  ```
+  ```shell
   k create deploy <deployment_name>
   ```
 
   See the rollout status of a deployment:
-  ```
+  ```shell
   k rollout status deployment <deployment_name> -n <namespace_name>
   ```
 
@@ -404,23 +403,20 @@ Examples:
 
 
   An example with sidecar container:
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
     name: pod-with-sidecar
   spec:
-     Create a volume called 'shared-logs' that the
-     app and sidecar share.
+     # Create a volume called 'shared-logs' that the app and sidecar share.
     volumes:
     - name: shared-logs 
       emptyDir: {}
 
-     In the sidecar pattern, there is a main application
-     container and a sidecar container.
+     # In the sidecar pattern, there is a main application container and a sidecar container.
     containers:
-
-     Main application container
+     # Main application container
     - name: app-container
        Simple application: write the current date
        to the log file every five seconds
@@ -428,24 +424,18 @@ Examples:
       command: ["/bin/sh"]
       args: ["-c", "while true; do date >> /var/log/app.txt; sleep 5;done"]
 
-       Mount the pod's shared log file into the app 
-       container. The app writes logs here.
+       # Mount the pod's shared log file into the app container. The app writes logs here.
       volumeMounts:
       - name: shared-logs
         mountPath: /var/log
 
-     Sidecar container
+     # Sidecar container
     - name: sidecar-container
-       Simple sidecar: display log files using nginx.
-       In reality, this sidecar would be a custom image
-       that uploads logs to a third-party or storage service.
+       # Simple sidecar: display log files using nginx. In reality, this sidecar would be a custom image that uploads logs to a third-party or storage service.
       image: nginx:1.7.9
       ports:
         - containerPort: 80
-
-       Mount the pod's shared log file into the sidecar
-       container. In this case, nginx will serve the files
-       in this directory.
+       # Mount the pod's shared log file into the sidecar container. In this case, nginx will serve the files in this directory.
       volumeMounts:
       - name: shared-logs
         mountPath: /usr/share/nginx/html  nginx-specific mount path
@@ -466,7 +456,7 @@ Examples:
   To specify an init container for a Pod, add the initContainers field into the Pod specification, as an array of container items (similar to the app containers field and its contents). See Container in the API reference for more details.
 
   An example of init-container:
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -500,7 +490,7 @@ Examples:
   - Security: TLS encryption is crucial for secure data transmission. By centralizing encryption within the adapter container, you ensure that data is always encrypted before leaving your application.
 
   An example with adapter container:
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -549,12 +539,12 @@ Examples:
 - <details><summary>Example_1: Working with storageClass:</summary>
 
   Get storage classes:
-  ```
+  ```shell
   k get sc
   ```
 
   Create a new storageClass, for example with `local-storage` name inside `local-storage.yaml` file:
-  ```
+  ```yaml
   apiVersion: storage.k8s.io/v1
   kind: StorageClass
   metadata:
@@ -564,7 +554,7 @@ Examples:
   ```
 
   Apply the file:
-  ```
+  ```shell
   k apply -f local-storage.yaml
   ```
 
@@ -573,17 +563,17 @@ Examples:
 - <details><summary>Example_2: Working with PV and PVC:</summary>
 
   To get PV in `qa` namespace:
-  ```
+  ```shell
   k get pv -n qa
   ```
 
   To get PVC in `qa` namespace:
-  ```
+  ```shell
   k get pvc -n qa
   ```
 
   Let's add a new PersistentVolume to `pv-log.yaml` file:
-  ```
+  ```yaml
   ---
   apiVersion: v1
   kind: PersistentVolume
@@ -600,12 +590,12 @@ Examples:
   ```
 
   Apply file:
-  ```
+  ```shell
   K apply -f pv-log.yaml
   ```
   
   Let's add a new PersistentVolumeClaim to `local-pvc.yaml` file:
-  ```
+  ```yaml
   ---
   kind: PersistentVolumeClaim
   apiVersion: v1
@@ -621,17 +611,17 @@ Examples:
   ```
 
   Apply `local-pvc.yaml` file:
-  ```
+  ```shell
   k apply -f local-pvc.yaml
   ```
 
   Check events:
-  ```
+  ```shell
   kubectl describe pvc local-pvc | grep -A3 Events
   ```
 
   Solution manifest file to create a pod called nginx is as follows into `nginx-pod.yaml` file:
-  ```
+  ```yaml
   ---
   apiVersion: v1
   kind: Pod
@@ -653,7 +643,7 @@ Examples:
   ```
 
   Apply it:
-  ```
+  ```shell
   k apply -f nginx-pod.yaml
   ```
 
@@ -668,7 +658,6 @@ Examples:
 **Useful non-official documentation**
 
 - None
-
 
 ## Application Deployment - 20%
 
@@ -685,29 +674,29 @@ Examples:
 - <details><summary>Example_1: Using Blue/Green deployment (example_1):</summary>
 
   I would like to create `NS`:
-  ```
+  ```shell
   k create ns blue-green
-  ``` 
+  ```
 
   Create `blue` version of deployment with the command:
-  ```
+  ```shell
   k create -n blue-green deployment blue-app --image=nginx:1.19 --port=80 --replicas=4 --dry-run=client -oyaml > blue-app-deploy.yaml
   ```
 
   Set label with CLI, but you can add it manually:
-  ```
+  ```shell
   k label deployments.apps -n blue-green blue-app env=blue
   ```
 
   Get the deployment:
-  ```
+  ```shell
   kubectl get deployments -n blue-green --show-labels
   NAME       READY   UP-TO-DATE   AVAILABLE   AGE    LABELS
   blue-app   4/4     4            4           2m5s   app=blue-app,env=blue
   ```
   
   An example of `blue` version of deployment looks like (`k get deployments.apps -n blue-green blue-app -o yaml` command and deleted some no needed lines):
-  ```
+  ```yaml
   ---
   apiVersion: apps/v1
   kind: Deployment
@@ -746,14 +735,14 @@ Examples:
   NOTE: To apply file you can use `k apply -f blue-app-deploy.yaml`.
 
   Create Kubernetes `service` with command:
-  ```
+  ```shell
   k expose -n blue-green deployment blue-app --name=blue-green-svc --type=NodePort --port=80 --target-port=80 --selector="app=blue-app"
   ```
 
   NOTE: Can be possible to use `ClusterIP`.
 
   Or, manually something like:
-  ```
+  ```yaml
   apiVersion: v1
   kind: Service
   metadata:
@@ -775,34 +764,34 @@ Examples:
   ```
 
   NOTE: If you want to patch service, you can use the next command:
-  ```
+  ```shell
   k patch svc -n blue-green blue-green-svc -p '{"spec":{"type":"NodePort"}}'
   ```
 
   Getting svc:
-  ```
+  ```shell
   k get svc -n blue-green --show-labels
   NAME             TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE     LABELS
   blue-green-svc   NodePort   10.97.239.43   <none>        80:32298/TCP   2m14s   app=blue-app,env=blue
   ```
 
   NOTE: Now we can make `port-forward`, to expose svc on local env, for example:
-  ```
+  ```shell
   k port-forward -n blue-green services/blue-green-svc --address=0.0.0.0 8888:80
   ```
 
   Then, create a new `green` version of deployment with the command:
-  ```
+  ```shell
   k create -n blue-green deployment green-app --image=httpd:2.4 --port=80 --replicas=4 --dry-run=client -oyaml > green-app-deploy.yaml
   ```
 
   Set a label with CLI, but you can add it manually:
-  ```
+  ```shell
   k label deployments.apps -n blue-green green-app env=green
   ```
 
   An example of `green` version of deployment looks like:
-  ```
+  ```yaml
   ---
   apiVersion: apps/v1
   kind: Deployment
@@ -835,25 +824,25 @@ Examples:
   ```
 
   Check if `httpd` has started well:
-  ```
+  ```shell
   k port-forward -n blue-green deployments/green-app --address=0.0.0.0 9999:80
   ```
 
   Then, switch traffic from `blue` to `green`:
-  ```
+  ```shell
   kubectl patch service blue-green-svc -n blue-green -p '{"spec":{"selector":{"app": "green-app"}}}'
-
+  
   kubectl patch service blue-green-svc -n blue-green -p '{"metadata":{"labels":{"app": "green-app"}}}'
   kubectl patch service blue-green-svc -n blue-green -p '{"metadata":{"labels":{"env": "green"}}}'
   ```
 
   Now, checking:
-  ```
+  ```shell
   k describe svc -n blue-green blue-green-svc
   ```
 
   NOTE: Now we can make `port-forward`, to expose svc on local env, for example:
-  ```
+  ```shell
   k port-forward -n blue-green services/blue-green-svc --address=0.0.0.0 9999:80
   ```
 
@@ -864,7 +853,7 @@ Examples:
 - <details><summary>Example_2: Using Blue/Green deployment (example_2):</summary>
 
   The full stack (blue-deployment + geen-deployment + service) in one `b-g-deployment.yaml` file:
-  ```
+  ```yaml
   ---
   apiVersion: apps/v1
   kind: Deployment
@@ -905,7 +894,7 @@ Examples:
         volumes:
         - name: workdir
           emptyDir: {}
-
+  
   ---
   apiVersion: v1
   kind: Service
@@ -922,7 +911,7 @@ Examples:
     selector:
       app: my-app
       version: v1
-
+  
   ---
   apiVersion: apps/v1
   kind: Deployment
@@ -965,38 +954,38 @@ Examples:
           emptyDir: {}
   ```
   Apply the stack:
-  ```
+  ```shell
   k apply -f b-g-deployment.yaml
   ```
 
   Make port-forvarding:
-  ```
+  ```shell
   k port-forward services/my-app-svc --address=0.0.0.0 8888:80
   ```
 
   Now, you can use `curl` and test your deployment:
-  ```
+  ```shell
   curl http://localhost:8888
   version-1
   ```
 
   Or, test if the deployment was successful from within a Pod:
-  ```
+  ```shell
   kubectl run -it --rm --restart=Never busybox --image=gcr.io/google-containers/busybox --command -- wget -qO- blue-green-svc
   ```
 
   Then, need to edit the `svc` to start using `green version of deployment`. You can use manual way or:
-  ```
+  ```shell
   kubectl patch service my-app-svc -p '{"spec":{"selector":{"version": "v2"}}}'
   ```
 
   Make port-forvarding:
-  ```
+  ```shell
   k port-forward services/my-app-svc --address=0.0.0.0 8888:80
   ```
 
   Now, you can use `curl` and test your deployment:
-  ```
+  ```shell
   curl http://localhost:8888
   version-2
   ```
@@ -1008,23 +997,23 @@ Examples:
 - <details><summary>Example_3: Using Canary deployment (example_1):</summary>
 
   I would like to create `NS`:
-  ```
+  ```shell
   k create ns canary
-  ``` 
+  ```
 
   Create `primary` version of deployment with the command:
-  ```
+  ```shell
   k create -n canary deployment primary-app --image=nginx:1.19 --port=80 --replicas=4 --dry-run=client -oyaml > primary-app-deploy.yaml
   ```
 
   Set a label with CLI, but you can add it manually:
-  ```
+  ```shell
   k label deployments.apps -n canary primary-app env=primary
   k label deployments.apps -n canary primary-app deployment=canary
   ```
 
   The example of `primary-app` deployment looks like:
-  ```
+  ```yaml
   apiVersion: apps/v1
   kind: Deployment
   metadata:
@@ -1062,7 +1051,7 @@ Examples:
   ```
 
   Get the deployment:
-  ```
+  ```shell
   kubectl get deployments -n canary --show-labels
   NAME          READY   UP-TO-DATE   AVAILABLE   AGE     LABELS
   primary-app   4/4     4            4           5m19s   app=primary-app,deployment=canary,env=primary
@@ -1071,14 +1060,14 @@ Examples:
   Or, you can add them manually.
 
   Then, let's expose deployment with `service` something like:
-  ```
+  ```shell
   k expose -n canary deployment primary-app --name=canary-svc --type=NodePort --port=80 --target-port=80 --selector="app=primary-app"
   ```
 
   NOTE: Can be possible to use `ClusterIP`.
 
   Or, manually something like:
-  ```
+  ```yaml
   apiVersion: v1
   kind: Service
   metadata:
@@ -1101,35 +1090,35 @@ Examples:
   ```
 
   Also, you can create service by kubectl command:
-  ```
+  ```shell
   k create service nodeport canary-svc --tcp=80:80 --node-port=30378 --dry-run=client -o yaml
   ```
 
   Getting svc:
-  ```
+  ```shell
   k get svc -n canary --show-labels
   NAME         TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE   LABELS
   canary-svc   NodePort   10.97.177.59   <none>        80:30378/TCP   53s   app=primary-app,deployment=canary,env=primary
   ```
 
   NOTE: Now we can make `port-forward`, to expose svc on local env, for example:
-  ```
+  ```shell
   k port-forward -n canary services/canary-svc --address=0.0.0.0 8888:80
   ```
 
   Then, create `canary` version of deployment with the next command:
-  ```
+  ```shell
   k create -n canary deployment canary-app --image=httpd:2.4 --port=80 --replicas=2 --dry-run=client -oyaml > canary-app-deploy.yaml
   ```
 
   Set a label with CLI, but you can add it manually:
-  ```
+  ```shell
   k label deployments.apps -n canary canary-app env=canary
   k label deployments.apps -n canary canary-app deployment=canary
   ```
 
   Now, need to edit created `canary` deployment and need to set proper labels from `primary` deployment:
-  ```
+  ```yaml
   apiVersion: apps/v1
   kind: Deployment
   metadata:
@@ -1164,12 +1153,12 @@ Examples:
   ```
 
   Replace deployment:
-  ```
+  ```shell
   k replace -f canary-app-deploy.yaml --force
   ```
 
   Get pods with needed labels:
-  ```
+  ```shell
   k get po -n canary --show-labels
   NAME                           READY   STATUS    RESTARTS   AGE     LABELS
   canary-app-8447898f59-5nkxt    1/1     Running   0          7m43s   app=primary-app,pod-template-hash=8447898f59
@@ -1181,7 +1170,7 @@ Examples:
   ```
 
   Or:
-  ```
+  ```shell
   k get po -n canary -l app=primary-app
   NAME                           READY   STATUS    RESTARTS   AGE
   canary-app-8447898f59-5nkxt    1/1     Running   0          9m29s
@@ -1193,23 +1182,23 @@ Examples:
   ```
 
   One more check - svc and deployments:
-  ```
+  ```shell
   k get deploy,svc -n canary -l app=primary-app
   NAME                          READY   UP-TO-DATE   AVAILABLE   AGE
   deployment.apps/canary-app    2/2     2            2           12m
   deployment.apps/primary-app   4/4     4            4           4h27m
-
+  
   NAME                 TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
   service/canary-svc   NodePort   10.97.177.59   <none>        80:30378/TCP   23m
   ```
 
   Make `port-forward` on service:
-  ```
+  ```shell
   k port-forward -n canary services/canary-svc --address=0.0.0.0 8888:80
   ```
 
   Now, checking stack, for this case you can use `curl` command in loop:
-  ```
+  ```shell
   while true; do sleep 1; curl http://localhost:8888; done
   ```
 
@@ -1218,7 +1207,7 @@ Examples:
 - <details><summary>Example_4: Using Canary deployment (example_2):</summary>
 
   The full stack (primary-deployment + canary-deployment + service) in one `canary-deployment.yaml` file:
-  ```
+  ```yaml
   ---
   apiVersion: apps/v1
   kind: Deployment
@@ -1259,7 +1248,7 @@ Examples:
         volumes:
         - name: workdir
           emptyDir: {}
-
+  
   ---
   apiVersion: v1
   kind: Service
@@ -1275,7 +1264,7 @@ Examples:
       targetPort: 80
     selector:
       app: my-app
-
+  
   ---
   apiVersion: apps/v1
   kind: Deployment
@@ -1319,17 +1308,17 @@ Examples:
   ```
 
   Apply stacks:
-  ```
+  ```shell
   k apply -f canary-deployment.yaml
   ```
 
   Make port-forvarding:
-  ```
+  ```shell
   k port-forward services/canary-svc --address=0.0.0.0 8888:80
   ```
 
   Now, you can use `curl` and test your deployment:
-  ```
+  ```shell
   curl http://localhost:8888
   version-1
   version-1
@@ -1348,7 +1337,7 @@ Examples:
   ```
 
   Or, test if the deployment was successful from within a Pod:
-  ```
+  ```shell
   kubectl run -it --rm --restart=Never busybox --image=gcr.io/google-containers/busybox --command -- wget -qO- canary-svc
   version-1
   version-1
@@ -1373,7 +1362,7 @@ Examples:
 - <details><summary>Example_5: Using Recreate deployment (example_1):</summary>
 
   For exapmle, open `web-server-recreate-deployment.yaml` file and put the next data:
-  ```
+  ```yaml
   ---
   apiVersion: apps/v1
   kind: Deployment
@@ -1400,12 +1389,12 @@ Examples:
   ```
 
   Then, apply it:
-  ```
+  ```shell
   k apply -f web-server-recreate-deployment.yaml
   ```
 
   Get pods:
-  ```
+  ```shell
   k get po -l app=httpd
   ```
 
@@ -1414,7 +1403,7 @@ Examples:
 - <details><summary>Example_6: Using Rollingupdate deployment (example_1):</summary>
 
   For exapmle, open `web-server-rollingupdate-deployment.yaml` file and put the next data:
-  ```
+  ```yaml
   ---
   apiVersion: apps/v1
   kind: Deployment
@@ -1449,12 +1438,12 @@ Examples:
   ```
   
   Then, apply it:
-  ```
+  ```shell
   k apply -f web-server-rollingupdate-deployment.yaml
   ```
 
   Get pods:
-  ```
+  ```shell
   k get po -l app=web-server
   ```
 
@@ -1485,11 +1474,11 @@ Examples:
 - <details><summary>Example_1: Using rolling updates (deprecated way):</summary>
 
   1. Make changes in YAML file and run:
-    ```
+    ```shell
     k apply -f deploy-definition.yaml
     ```
   2. Update only needed param, for example - `image` only:
-    ```
+    ```shell
     k set image deployment/my-deploy-1 nginx-container=nginx:1.19 --record
     ```
 
@@ -1499,19 +1488,19 @@ Examples:
     - `nginx:1.19` - The needed image name with tag.
 
   Let's create a new deployment:
-  ```
+  ```shell
   kubectl create deployment my-deploy-1 --image=nginx:1.17
   ```
 
   Let's update image:
-  ```
+  ```shell
   kubectl set image deployment my-deploy-1 nginx=nginx:1.18 --record
   ```
 
   NOTE: Flag `--record` has been deprecated, `--record` will be removed in the future
 
   Getting events from deployment:
-  ```
+  ```shell
   k describe deploy my-deploy-1
   ```
 
@@ -1520,43 +1509,43 @@ Examples:
 - <details><summary>Example_2: Using rolling updates (new one):</summary>
 
   Create the deployment:
-  ```
+  ```shell
   k create deployment nginx --image=nginx:1.16.0 --replicas=1
   ```
 
   Check the history of the `nginx` deployment:
-  ```
+  ```shell
   k rollout history deployment nginx
   
   deployment.apps/nginx
   REVISION  CHANGE-CAUSE
   1         <none>
-
+  
   ```
 
   Update the image on deployment:
-  ```
+  ```shell
   k set image deployment/nginx nginx=nginx:latest
   ```
 
   Annotate the deployment now and create the history:
-  ```
+  ```shell
   k annotate deployment nginx kubernetes.io/change-cause="version change to 1.16.0 to latest" --overwrite=true
   ```
 
   Check the history
-  ```
+  ```shell
   k rollout history deployment nginx
-
+  
   deployment.apps/nginx
   REVISION  CHANGE-CAUSE
   1         <none>
   2         version change to 1.16.0 to latest
-
+  
   ```
 
   Revert changes back, for example:
-  ```
+  ```shell
   k rollout undo deployment nginx --to-revision=1
   ```
 
@@ -1565,22 +1554,22 @@ Examples:
 - <details><summary>Example_3: Using rollbacks:</summary>
 
   Rollout command:
-  ```
+  ```shell
   k rollout status deployment/my-deploy-1
   ```
 
   To get history of rollouts:
-  ```
+  ```shell
   k rollout history deployment/my-deploy-1
   ```
 
   Make rollout:
-  ```
+  ```shell
   k rollout undo deployment/my-deploy-1
   ```
 
   Or:
-  ```
+  ```shell
   kubectl rollout undo deployment my-deploy-1 --to-revision=1
   ```
 
@@ -1592,12 +1581,12 @@ Examples:
   - `maxUnavailable` is an optional field that specifies the maximum number of Pods that can be unavailable during the update process. The value can be an absolute number (for example, 5) or a percentage of desired Pods (for example, 10%). The absolute number is calculated from percentage by rounding down. The value cannot be 0 if .spec.strategy.rollingUpdate.maxSurge is 0. The default value is 25%.
 
   Let's create a new deployment:
-  ```
+  ```shell
   k create deployment my-deploy --image=httpd:2.4 --port=80 --replicas=7 --dry-run=client -oyaml > my-deploy.yaml
   ```
 
   Open `my-deploy.yaml` file and put `maxSurge` & `maxUnavailable` parameters:
-  ```
+  ```yaml
   apiVersion: apps/v1
   kind: Deployment
   metadata:
@@ -1631,7 +1620,7 @@ Examples:
   ```
 
   Apply the file:
-  ```
+  ```shell
   k apply -f ./my-deploy.yaml
   ```
 
@@ -1652,7 +1641,7 @@ Examples:
 - <details><summary>Example_1: Install & use helm:</summary>
 
   Run the next commands:
-  ```
+  ```shell
   curl https://baltocdn.com/helm/signing.asc | apt-key add -
   apt-get install apt-transport-https --yes
   echo "deb https://baltocdn.com/helm/stable/debian/ all main" | tee /etc/apt/sources.list.d/helm-stable-debian.list
@@ -1660,42 +1649,42 @@ Examples:
   ```
 
   Now, you can add some repo:
-  ```
+  ```shell
   helm repo add bitnami https://charts.bitnami.com/bitnami
   ```
 
   Search packege, for example:
-  ```
+  ```shell
   helm search repo joomla
   ```
 
   To get list of repos:
-  ```
+  ```shell
   helm repo list
   ```
 
   Now, let's install something, for example:
-  ```
+  ```shell
   helm install drupal bitnami/drupal
   ```
 
   To get releases:
-  ```
+  ```shell
   helm list
   ```
 
   To delete installed release:
-  ```
+  ```shell
   helm uninstall drupal
   ```
 
   To download some release and store it on host you can use the next command:
-  ```
+  ```shell
   helm pull --untar  bitnami/apache
   ```
 
   To deploy your release:
-  ```
+  ```shell
   helm install mywebapp ./apache
   ```
 
@@ -1726,7 +1715,7 @@ Examples:
 - <details><summary>Example_1: Customization of kubernetes YAML configurations with kubectl kustomize:</summary>
 
   To get help, use:
-  ```
+  ```shell
   kubectl kustomize -h
   ```
 
@@ -1744,6 +1733,7 @@ Examples:
 - [Kubernetes Kustomize Tutorial](https://antonputra.com/kubernetes/kubernetes-kustomize-tutorial/)
 - [Kustomize examples](https://github.com/viadee/kustomize-examples)
 
+
 ## Application Observability and Maintenance - 15%
 
 ### Understand API deprecations
@@ -1752,37 +1742,37 @@ Examples:
 - <details><summary>Example_1: Find and fix deprecations API in PODs/Deployments:</summary>
 
   Get API version of deploy:
-  ```
+  ```shell
   k explain deploy
   ```
 
   Get API version of job:
-  ```
+  ```shell
   kubectl explain job | grep -Ei group
   ```
 
   Get API version of POD:
-  ```
+  ```shell
   k explain pod
   ```
 
   Or, better one:
-  ```
+  ```shell
   kubectl api-resources
   ```
 
   Show resources per namespace or non-namespaced resources:
-  ```
+  ```shell
   k api-resources --namespaced=false
   ```
 
   Get `API` resources which support `list` and `get` type of verbs:
-  ```
+  ```shell
   k api-resources --verbs=list,get
   ```
 
   Print the supported API resources with a specific APIGroup:
-  ```
+  ```shell
   k api-resources --api-group=extensions
   k api-resources --api-group=rbac.authorization.k8s.io
   ```
@@ -1792,7 +1782,8 @@ Examples:
 - <details><summary>Example_2: Enabling/Disabling API Groups in Kubernetes:</summary>
 
   Enable the `v1alpha1` version for `rbac.authorization.k8s.io` API group on the `controlplane` node. Opening `/etc/kubernetes/manifests/kube-apiserver.yaml` file and put `--runtime-config` something like this:
-  ```
+  ```yaml
+   .....
    - command:
     - kube-apiserver
     - --advertise-address=10.18.17.8
@@ -1802,24 +1793,25 @@ Examples:
     - --enable-admission-plugins=NodeRestriction
     - --enable-bootstrap-token-auth=true
     - --runtime-config=rbac.authorization.k8s.io/v1alpha1
+    .....
   ```
-
+  
   Adding str inside `/etc/kubernetes/manifests/kube-apiserver.yaml`:
-  ```
+  ```yaml
   ....
   --runtime-config=batch/v2alpha1
   ....
   ```
-
+  
   Now, let's install the `kubectl convert` plugin on the `controlplane` node:
-  ```
+  ```shell
   curl -LO https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl-convert
   chmod +x kubectl-convert
   mv kubectl-convert /usr/local/bin/kubectl-convert
   ```
-
+  
   Now, you will be able to convert any resources, for example:
-  ```
+  ```shell
   kubectl-convert -f ingress-old.yaml --output-version networking.k8s.io/v1
   ```
 
@@ -1845,12 +1837,12 @@ Examples:
 - <details><summary>Example_1: Create readiness probe with httpGet:</summary>
 
   Create a new pod to play around with readiness probe, for example:
-  ```
+  ```shell
   k run readiness-probe-httpget --image=nginx --dry-run=client -oyaml > readiness-probe-httpget.yaml
   ```
 
   Edit created file and add `httpGet` readiness probe on `8080` port: 
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -1878,12 +1870,12 @@ Examples:
   ```
 
   Apply file:
-  ```
+  ```shell
   k apply -f readiness-probe-httpget.yaml
   ```
 
   Checking:
-  ```
+  ```shell
   k get po readiness-probe-httpget
   ```
 
@@ -1892,12 +1884,12 @@ Examples:
 - <details><summary>Example_2: Create readiness probe with exec:</summary>
 
   Create a new pod to play around with readiness probe, for example:
-  ```
+  ```shell
   k run readiness-probe-exec --image=nginx --dry-run=client -oyaml > readiness-probe-exec.yaml
   ```
 
   Edit created file and add `exec` readiness probe on `8080` port: 
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -1929,12 +1921,12 @@ Examples:
   ```
 
   Apply file:
-  ```
+  ```shell
   k apply -f readiness-probe-exec.yaml
   ```
 
   Checking:
-  ```
+  ```shell
   k get po readiness-probe-exec
   ```
 
@@ -1943,12 +1935,12 @@ Examples:
 - <details><summary>Example_3: Create readiness probe with tcpSocket:</summary>
 
   Create a new pod to play around with readiness probe, for example:
-  ```
+  ```shell
   k run readiness-probe-tcpsocket --image=nginx --dry-run=client -oyaml > readiness-probe-tcpsocket.yaml
   ```
 
   Edit created file and add `tcpSocket` readiness probe on `8080` port: 
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -1975,12 +1967,12 @@ Examples:
   ```
 
   Apply file:
-  ```
+  ```shell
   k apply -f readiness-probe-tcpsocket.yaml
   ```
 
   Checking:
-  ```
+  ```shell
   k get po readiness-probe-tcpsocket
   ```
 
@@ -1989,12 +1981,12 @@ Examples:
 - <details><summary>Example_4: Create liveness probe with httpGet:</summary>
 
   Create a new pod to play around with liveness probe, for example:
-  ```
+  ```shell
   k run liveness-probe-httpget --image=nginx --dry-run=client -oyaml > liveness-probe-httpget.yaml
   ```
 
   Edit created file and add `httpGet` liveness probe on `8080` port: 
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -2022,12 +2014,12 @@ Examples:
   ```
 
   Apply file:
-  ```
+  ```shell
   k apply -f liveness-probe-httpget.yaml
   ```
 
   Checking:
-  ```
+  ```shell
   k get po liveness-probe-httpget
   ```
 
@@ -2036,12 +2028,12 @@ Examples:
 - <details><summary>Example_5: Create liveness probe with exec:</summary>
 
   Create a new pod to play around with liveness probe, for example:
-  ```
+  ```shell
   k run liveness-probe-exec --image=nginx --dry-run=client -oyaml > liveness-probe-exec.yaml
   ```
 
   Edit created file and add `exec` liveness probe on `8080` port: 
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -2073,12 +2065,12 @@ Examples:
   ```
 
   Apply file:
-  ```
+  ```shell
   k apply -f liveness-probe-exec.yaml
   ```
 
   Checking:
-  ```
+  ```shell
   k get po liveness-probe-exec
   ```
 
@@ -2087,12 +2079,12 @@ Examples:
 - <details><summary>Example_6: Create liveness probe with tcpSocket:</summary>
 
   Create a new pod to play around with liveness probe, for example:
-  ```
+  ```shell
   k run liveness-probe-tcpsocket --image=nginx --dry-run=client -oyaml > liveness-probe-tcpsocket.yaml
   ```
 
   Edit created file and add `tcpSocket` liveness probe on `8080` port: 
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -2119,12 +2111,12 @@ Examples:
   ```
 
   Apply file:
-  ```
+  ```shell
   k apply -f liveness-probe-tcpsocket.yaml
   ```
 
   Checking:
-  ```
+  ```shell
   k get po liveness-probe-tcpsocket
   ```
 
@@ -2133,12 +2125,12 @@ Examples:
 - <details><summary>Example_7: Create startup probe with httpGet:</summary>
 
   Create a new pod to play around with startup probe, for example:
-  ```
+  ```shell
   k run startup-probe-httpget --image=nginx --dry-run=client -oyaml > startup-probe-httpget.yaml
   ```
 
   Edit created file and add `httpGet` startup probe on `8080` port: 
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -2166,12 +2158,12 @@ Examples:
   ```
 
   Apply file:
-  ```
+  ```shell
   k apply -f startup-probe-httpget.yaml
   ```
 
   Checking:
-  ```
+  ```shell
   k get po startup-probe-httpget
   ```
 
@@ -2180,12 +2172,12 @@ Examples:
 - <details><summary>Example_8: Create startup probe with exec:</summary>
 
   Create a new pod to play around with startup probe, for example:
-  ```
+  ```shell
   k run startup-probe-exec --image=nginx --dry-run=client -oyaml > startup-probe-exec.yaml
   ```
 
   Edit created file and add `exec` startup probe on `8080` port: 
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -2217,12 +2209,12 @@ Examples:
   ```
 
   Apply file:
-  ```
+  ```shell
   k apply -f startup-probe-exec.yaml
   ```
 
   Checking:
-  ```
+  ```shell
   k get po startup-probe-exec
   ```
 
@@ -2231,12 +2223,12 @@ Examples:
 - <details><summary>Example_9: Create startup probe with tcpSocket:</summary>
 
   Create a new pod to play around with startup probe, for example:
-  ```
+  ```shell
   k run startup-probe-tcpsocket --image=nginx --dry-run=client -oyaml > startup-probe-tcpsocket.yaml
   ```
 
   Edit created file and add `tcpSocket` startup probe on `8080` port: 
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -2263,12 +2255,12 @@ Examples:
   ```
 
   Apply file:
-  ```
+  ```shell
   k apply -f startup-probe-tcpsocket.yaml
   ```
 
   Checking:
-  ```
+  ```shell
   k get po startup-probe-tcpsocket
   ```
 
@@ -2291,12 +2283,12 @@ Examples:
 - <details><summary>Example_1: Install metrics server:</summary>
 
   To install `metrics-server`, use:
-  ```
+  ```shell
   kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
   ```
 
   Simple check:
-  ```
+  ```shell
   kubectl get --raw /apis/metrics.k8s.io/v1beta1/nodes
   ```
 
@@ -2305,7 +2297,7 @@ Examples:
 - <details><summary>Example_2: Get node metrics:</summary>
 
   If you want to get CPU & Mem usage on nodes:
-  ```
+  ```shell
   k top node
   ```
 
@@ -2314,7 +2306,7 @@ Examples:
 - <details><summary>Example_3: Get POD metrics:</summary>
 
   If you want to get CPU & Mem usage on PODs:
-  ```
+  ```shell
   k top pod
   ```
 
@@ -2326,17 +2318,17 @@ Examples:
 - <details><summary>Example_1: Getting logs:</summary>
 
   To get logs from POD, use:
-  ```
+  ```shell
   k logs <POD_ID_or_NAME>
   ```
 
   To get logs from deployment, use:
-  ```
+  ```shell
   k logs <DEPLOYMENT_NAME_or_ID>
   ```
 
   Get logs newer than a relative duration like `1h`:
-  ```
+  ```shell
   k logs --since=1m deployments/nginx
   ```
 
@@ -2356,17 +2348,17 @@ Examples:
 - <details><summary>Example_1: Using logs:</summary>
 
   To get logs from POD, use:
-  ```
+  ```shell
   k logs <POD_ID_or_NAME>
   ```
 
   To get logs from deployment, use:
-  ```
+  ```shell
   k logs <DEPLOYMENT_NAME_or_ID>
   ```
 
   Get logs newer than a relative duration like `1h`:
-  ```
+  ```shell
   k logs --since=1m deployments/nginx
   ```
 
@@ -2375,12 +2367,12 @@ Examples:
 - <details><summary>Example_2: Using describe command in kubectl:</summary>
 
   To describe POD, use:
-  ```
+  ```shell
   k describe po <POD_ID_or_NAME>
   ```
 
   To get logs from deployment, use:
-  ```
+  ```shell
   k describe deploy <DEPLOYMENT_NAME_or_ID>
   ```
 
@@ -2389,12 +2381,12 @@ Examples:
 - <details><summary>Example_3: Using crictl:</summary>
 
   Getting ID of container:
-  ```
+  ```shell
   crictl ps -a | grep api
   ```
 
   Check logs:
-  ```
+  ```shell
   crictl logs fbb80dac7429e
   ```
 
@@ -2429,7 +2421,7 @@ Examples:
   This topic's out of that certificate! But let's take a look at the simple example.
 
   Create a CustomResourceDefinition manifest file for an Operator with the following specifications. Open `operator-crd.yml` and put the next:
-  ```
+  ```yaml
   apiVersion: apiextensions.k8s.io/v1
   kind: CustomResourceDefinition
   metadata:
@@ -2466,12 +2458,12 @@ Examples:
   ```
 
   Apply the configureation:
-  ```
+  ```shell
   k apply -f operator-crd.yml
   ```
 
   Create custom object from the CRD:
-  ```
+  ```yaml
   apiVersion: stable.example.com/v1
   kind: Operator
   metadata:
@@ -2483,7 +2475,7 @@ Examples:
   ```
 
   Listing operator:
-  ```
+  ```shell
   kubectl get operators
   kubectl get operator
   kubectl get op
@@ -2498,7 +2490,6 @@ Examples:
 **Useful non-official documentation**
 
 - [A Hands-On Guide to Kubernetes Custom Resource Definitions (CRDs) With a Practical Example](https://medium.com/@muppedaanvesh/a-hand-on-guide-to-kubernetes-custom-resource-definitions-crds-with-a-practical-example-%EF%B8%8F-84094861e90b)
-- []()
 
 ### Understand authentication, authorization and admission controllers
 
@@ -2545,12 +2536,12 @@ Examples:
 - <details><summary>Example_1: Using kubeconfig file to work with Kubernetes:</summary>
 
   To view Kubernetes config:
-  ```
+  ```shell
   k config view
   ```
 
   Or, if you have custome kubeconfig file, for example:
-  ```
+  ```shell
   k config get-clusters --kubeconfig=my-custom-kubeconfig
   ```
 
@@ -2559,7 +2550,7 @@ Examples:
 - <details><summary>Example_2: Using Authorication mode in Kubernetes API server:</summary>
 
   Checking which auth-mode kube-apiserver uses:
-  ```
+  ```shell
   cat /etc/kubernetes/manifests/kube-apiserver.yaml | grep -Ei "authorization-mode"
     - --authorization-mode=Node,RBAC
   ```
@@ -2571,24 +2562,24 @@ Examples:
 - <details><summary>Example_3: Using RBAC to work with Kubernetes (roles and role bindings):</summary>
 
   To view roles in Kubernetes:
-  ```
+  ```shell
   k get roles
   ```
 
   Create role & rolebinding:
-  ```
+  ```shell
   k create role role_name --verb=get,list,watch --resource=pods
   k create rolebinding role_name_binding --role=role_name --user=captain --group=group1
   ```
 
   Verify:
-  ```
+  ```shell
   k auth can-i get pods --as captain -n kube-public
   k auth can-i list pods --as captain -n default
   ```
 
   One more example with role, open `read-only-role.yaml` file and put:
-  ```
+  ```yaml
   ---
   apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -2612,7 +2603,7 @@ Examples:
     - list
     - get
     - watch
-
+  
   ---
   apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
@@ -2629,7 +2620,7 @@ Examples:
   ```
 
   Apply the file:
-  ```
+  ```shell
   k apply -f read-only-role.yaml
   ```
 
@@ -2638,18 +2629,18 @@ Examples:
 - <details><summary>Example_4: Using RBAC to work with Kubernetes (cluster roles and cluster role bindings):</summary>
 
   To view cluster roles in Kubernetes:
-  ```
+  ```shell
   k get clusterrole
   ```
 
   Create clusterrole & clusterrolebinding:
-  ```
+  ```shell
   k create clusterrole cluster_role --verb=get,list,watch --resource=pods
   k create clusterrolebinding cluster_role_binding --clusterrole=cluster_role --user=cap
   ```
   
   Verify:
-  ```
+  ```shell
   k auth can-i list pods --as cap -n kube-public
   k auth can-i list pods --as cap -n default
   ```
@@ -2659,12 +2650,12 @@ Examples:
 - <details><summary>Example_5: Working with Service Account and RBAC:</summary>
 
   Get cluster roles:
-  ```
+  ```shell
   k get clusterrole
   ```
 
   Create Service Account and RBAC:
-  ```
+  ```shell
   k -n name_space_1 create sa ser_acc
   k create clusterrolebinding ser_acc-view --clusterrole view --serviceaccount name_space_1:ser_acc
   ```
@@ -2674,7 +2665,7 @@ Examples:
   - `ser_acc` - Service account name.
 
   Verify:
-  ```
+  ```shell
   k auth can-i update deployments --as system:serviceaccount:name_space_1:ser_acc -n default
   k auth can-i update deployments --as system:serviceaccount:name_space_1:ser_acc -n name_space_1
   ```
@@ -2684,7 +2675,7 @@ Examples:
 - <details><summary>Example_6: Using Admission controllers in Kubernetes:</summary>
 
   Checking which controllers are in use:
-  ```
+  ```shell
   grep enable-admission-plugins /etc/kubernetes/manifests/kube-apiserver.yaml
     - --enable-admission-plugins=NodeRestriction
   ```
@@ -2692,7 +2683,7 @@ Examples:
   So, for example `NodeRestriction`.
 
   Let's add `NamespaceAutoProvision` controller and play around with it. Opening `/etc/kubernetes/manifests/kube-apiserver.yaml` and put the next data:
-  ```
+  ```yaml
   ...
   spec:
   containers:
@@ -2707,27 +2698,29 @@ Examples:
   ```
 
   That controller allows you to auto-create namespaces. Let's check it! 
-  ```
+  ```shell
   kubectl run nginx --image nginx -n this-ns-doesnt-exist
   pod/nginx created
   ```
 
-  Also, you can disable controllers, for example, - let's disable `DefaultStorageClass`. `/etc/kubernetes/manifests/kube-apiserver.yaml` and put the next data:
-  ```
+  Also, you can disable controllers, for example, - let's disable `DefaultStorageClass` in `/etc/kubernetes/manifests/kube-apiserver.yaml` and put the next data:
+  ```yaml
+  ...
   - --disable-admission-plugins=DefaultStorageClass
+  ...
   ```
-
+  
   To verify:
-  ```
+  ```shell
   ps -ef | grep kube-apiserver | grep admission-plugins
   ```
-
+  
   *NOTE*: To get list plugins you can use:
-  ```
+  ```shell
   ps -ef | grep apiserver
   ```
   Getting plugins:
-  ```
+  ```shell
   /proc/15501/exe -h | grep -Ei plugins
   ```
   Where `15501` - PID ID of the process. 
@@ -2755,12 +2748,12 @@ Examples:
 - <details><summary>Example_1: Setting up resources requests for POD:</summary>
 
   Let's create a new POD with `res-req-pod` name with `nginx` image:
-  ```
+  ```shell
   k run res-req-pod --image=nginx --dry-run=client -o yaml > res-req-pod.yaml
   ```
 
   Open the `` file and set up requests as `128Mi` memory and as `128m` cpu:
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -2784,12 +2777,12 @@ Examples:
   NOTE: By your needs, you can set `limits` as well!
 
   Checking pod:
-  ```
+  ```shell
   k get po res-req-pod
   ```
 
   Or, if you have labels:
-  ```
+  ```shell
   k get po -l env=dev
   kubectl get pods --selector env=dev
   ```
@@ -2799,12 +2792,12 @@ Examples:
 - <details><summary>Example_2: Setting up resources limits for POD:</summary>
 
   Let's create a new POD with `res-lim-pod` name with `nginx` image:
-  ```
+  ```shell
   k run res-lim-pod --image=nginx --dry-run=client -o yaml > res-lim-pod.yaml
   ```
 
-  Open the `` file and set up limits as `128Mi` memory and as `128m` cpu:
-  ```
+  Open the `res-lim-pod.yaml`file and set up limits as `128Mi` memory and as `128m` cpu:
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -2828,7 +2821,7 @@ Examples:
   NOTE: By your needs, you can set `requests` as well!
 
   Checking pod:
-  ```
+  ```shell
   k get po res-lim-pod
   ```
 
@@ -2846,22 +2839,22 @@ Examples:
   - If quota is enabled in a namespace for compute resources like cpu and memory, users must specify requests or limits for those values; otherwise, the quota system may reject pod creation. Hint: Use the LimitRanger admission controller to force defaults for pods that make no compute resource requirements.
 
   To play around with quotas, let's create namespace with `quotas-ns` name:
-  ```
+  ```shell
   k create ns quotas-ns
   ```
 
   Create `ResourceQuota` for `quotas-ns` namespace:
-  ```
+  ```shell
   k create quota -n quotas-ns my-rq --hard=cpu=1,memory=1G,pods=2 --dry-run=client -o yaml
   ```
 
   Or, you can use the next example:
-  ```
+  ```shell
   k create quota my-rq -n quotas-ns --hard=requests.cpu=1,requests.memory=1Gi,limits.cpu=2,limits.memory=2Gi
   ```
 
   Or, let's create quotas with `quotas-ns` name for that created NS (manual way). Open `quotas-ns.yaml` file and put:
-  ```
+  ```yaml
   apiVersion: v1
   kind: ResourceQuota
   metadata:
@@ -2876,12 +2869,12 @@ Examples:
   ```
 
   Apply the file:
-  ```
+  ```shell
   k apply -f quotas-ns.yaml
   ```
 
   Now, create POD/deploy to verify how it working:
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -2901,17 +2894,17 @@ Examples:
   ```
 
   Apply it:
-  ```
+  ```shell
   k apply -f quota-demo.yaml
   ```
 
   To check quota stats:
-  ```
+  ```shell
   k get resourcequotas -n quotas-ns -o yaml
   ```
 
   Or, one more example:
-  ```
+  ```shell
   k get resourcequotas quotas-ns -n quotas-ns  -o jsonpath='{ .status.used }' | jq -r '.'
   k get resourcequotas quotas-ns -n quotas-ns  -o jsonpath='{ .status.hard }' | jq -r '.'
   ```
@@ -2942,12 +2935,12 @@ Examples:
   - If two or more LimitRange objects exist in the namespace, it is not deterministic which default value will be applied.
 
   Create a new NS:
-  ```
+  ```shell
   kubectl create ns limitrange
   ```
 
   Next, create a file with `ns-memory-limit.yaml` name and put the next content:
-  ```
+  ```yaml
   apiVersion: v1
   kind: LimitRange
   metadata:
@@ -2965,17 +2958,17 @@ Examples:
   ```
 
   Apply the file:
-  ```
+  ```shell
   kubectl apply -f ns-memory-limit.yaml
   ```
 
   Describe `limitrange`:
-  ```
+  ```shell
   k describe limitrange ns-memory-limit -n limitrange
   ```
 
   Create an nginx pod that requests 250Mi of memory in the limitrange namespace:
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -3026,12 +3019,12 @@ Examples:
 - <details><summary>Example_1: Create a new configMap:</summary>
 
   1. Let's create a new configmap with `my-cm` name in `prod` namespace:
-    ```
+    ```shell
     k create cm my-cm -n prod --from-literal=username=username --from-literal=password=MyPasswd --from-literal=host=localhost
     ```
 
   2. Let's create a new configmap with `my-cm2` name in `prod` namespace:
-    ```
+    ```shell
     echo "username=user" >> creds.txt
     echo "password=password" >> creds.txt
     echo "host=localhost" >> creds.txt
@@ -3047,7 +3040,7 @@ Examples:
     ```
 
     To get data, you can use:
-    ```
+    ```shell
     k describe cm -n prod my-cm2
     
     Name:         my-cm2
@@ -3074,7 +3067,7 @@ Examples:
 
   In `prod` ns get configmaps and create a new pod with `env-pod-vars` name. The `my-cm` configmap attach as ENV and `my-cm2` another one - as volume. Names, you can use by your choise.
   First of all, gets cms:
-  ```
+  ```shell
   k get cm -n prod
   NAME               DATA   AGE
   kube-root-ca.crt   1      11m
@@ -3083,13 +3076,13 @@ Examples:
   ```
 
   Create Pod:
-  ```
+  ```shell
   k run env-pod-vars -n prod --image=nginx --dry-run=client -o yaml > env-pod-vars.yaml
   ```
 
   Next, edit `env-pod-vars.yaml` file and create ENV + mount volume:
   
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -3123,7 +3116,7 @@ Examples:
   ```
 
   Another solution:
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -3169,7 +3162,7 @@ Examples:
 
 ### Define resource requirements
 
-Let us try to understand the whole concept in following points :
+**Let us try to understand the whole concept in following points**:
 - **Understand Resource Limits**: Before we delve into the details of limiting Kubernetes resources, it's crucial to have a clear understanding of what resource limits are and why they are important. Resource limits define the maximum amount of CPU and memory that a container can consume within a Kubernetes cluster. By setting resource limits, you prevent containers from monopolizing resources, ensuring fair allocation and preventing resource exhaustion. When setting resource limits, it's essential to consider the specific requirements of your applications and the available resources in your cluster. By understanding the resource needs of your workloads, you can effectively allocate resources and avoid bottlenecks or performance issues.
 - **Set Resource Requests**: In addition to setting resource limits, it's also crucial to define resource requests for your containers. Resource requests specify the minimum amount of CPU and memory that a container requires to run. Kubernetes uses these requests to schedule containers onto appropriate nodes with sufficient resources. By setting resource requests accurately, you ensure that your containers have the necessary resources to function properly. This helps Kubernetes make informed scheduling decisions and prevents overcommitment of resources.
 - **Utilize Resource Quotas**: To further enforce resource limits and prevent resource abuse, Kubernetes provides resource quotas. Resource quotas allow you to define limits on the total amount of CPU and memory that can be consumed by all containers within a namespace. By utilizing resource quotas, you can ensure that different teams or projects within your cluster have a fair share of resources. This helps prevent resource contention and allows for better resource management and isolation.
@@ -3182,7 +3175,7 @@ Let us try to understand the whole concept in following points :
 - **Regularly Review Resource Usage**: Lastly, it's crucial to regularly review resource usage and make informed decisions based on the insights gained. By periodically analyzing resource usage patterns, you can identify areas for improvement, optimize resource allocation, and prevent resource waste. Regularly reviewing resource usage also helps you stay proactive in managing resource limits, ensuring that your cluster remains efficient and responsive to changing workload demands.
 
 
-Limit Kubernetes resources with these top tools:
+**Limit Kubernetes resources with these top tools**:
 - **ResourceQuota**: ResourceQuota is a Kubernetes feature that allows you to set limits on the amount of resources that can be consumed by a namespace or a group of namespaces. With ResourceQuota, you can define limits for CPU, memory, storage, and other resources, preventing any single application or user from monopolizing resources and impacting the performance of other applications. By setting ResourceQuota, you can ensure fair resource allocation and avoid resource contention issues. This helps in maximizing the efficiency of your Kubernetes cluster by preventing resource wastage and ensuring that resources are distributed evenly among applications.
 - **LimitRange**: LimitRange is another useful tool in Kubernetes that allows you to define default resource limits for containers within a namespace. With LimitRange, you can set constraints on CPU, memory, and storage for individual containers, ensuring that they do not exceed the specified limits. By using LimitRange, you can prevent containers from consuming excessive resources, which can lead to performance degradation and resource contention. This tool helps in optimizing resource allocation by enforcing resource limits at the container level, ensuring that each container gets its fair share of resources.
 - **HorizontalPodAutoscaler**: The HorizontalPodAutoscaler (HPA) is a Kubernetes feature that automatically scales the number of pods in a deployment based on CPU utilization or custom metrics. With HPA, you can define target CPU utilization thresholds, and the tool will automatically adjust the number of pods to meet the desired utilization level. By leveraging HPA, you can ensure that your applications always have the necessary resources to handle varying workloads. The tool dynamically scales the number of pods up or down, based on the observed CPU utilization, allowing your applications to scale seamlessly and efficiently.
@@ -3197,7 +3190,6 @@ Limit Kubernetes resources with these top tools:
 
 Examples:
   The examples will be in another section of this cource. This is only understanding of resource requirements.
-
 
 **Useful official documentation**
 
@@ -3217,12 +3209,12 @@ Examples:
 - <details><summary>Example_1: Create new secrets:</summary>
 
   Lets create a new secret with `new-secret` name in `default` namespace:
-  ```
+  ```shell
   k create secret generic new-secret --from-literal=user=username --from-literal=password=password
   ```
 
   Getting secrets:
-  ```
+  ```shell
   k get secret
   NAME         TYPE     DATA   AGE
   new-secret   Opaque   2      17s
@@ -3233,12 +3225,12 @@ Examples:
 - <details><summary>Example_2: Consume secret in Pod as environment variable:</summary>
 
   Let's create a new pod with `sec-env-var` name to play around with secret and environment variable:
-  ```
+  ```shell
   k run sec-env-var --image=nginx --dry-run=client -o yaml > sec-env-var.yaml
   ```
 
   Then, open yaml file and attach secret as environemnt variable:
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -3263,7 +3255,7 @@ Examples:
   ```
 
   Or, another solution:
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -3285,7 +3277,7 @@ Examples:
   ```
 
   Apply the yaml:
-  ```
+  ```shell
   k apply -f sec-env-var.yaml
   ```
 
@@ -3294,12 +3286,12 @@ Examples:
 - <details><summary>Example_3: Consume secret in Pod as volume:</summary>
 
   Let's create a new pod with `sec-volume-var` name to play around with secret and mount it as volume:
-  ```
+  ```shell
   k run sec-volume-var --image=nginx --dry-run=client -o yaml > sec-volume-var.yaml
   ```
 
   Then, open yaml file and mount secret as volume. The name you can use by yourself:
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -3325,7 +3317,7 @@ Examples:
   ```
 
   Or, another way:
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -3354,7 +3346,7 @@ Examples:
   ```
 
   Apply the yaml:
-  ```
+  ```shell
   k apply -f sec-volume-var.yaml
   ```
 
@@ -3363,14 +3355,14 @@ Examples:
 - <details><summary>Example_4: Get, read, decode secrets:</summary>
 
   Getting secrets:
-  ```
+  ```shell
   k get secret
   NAME         TYPE     DATA   AGE
   new-secret   Opaque   2      17s
   ```
 
   Let's read secret:
-  ```
+  ```shell
   k get secrets new-secret -o yaml
   
   apiVersion: v1
@@ -3388,7 +3380,7 @@ Examples:
   ```
 
   Decode it and store secret into file per key, for example:
-  ```
+  ```shell
   k get secrets new-secret -ojsonpath='{.data.user}' | base64 -d > user.txt
   k get secrets new-secret -ojsonpath='{.data.password}' | base64 -d > password.txt
   ```
@@ -3398,18 +3390,18 @@ Examples:
 - <details><summary>Example_5: Encrypting secret data at REST:</summary>
 
   Creating folder for this task:
-  ```
+  ```shell
   mkdir -p /etc/kubernetes/enc
   ```
 
   Encrypt secret phrase, for example:
-  ```
+  ```shell
   echo -n Secret-ETCD-Encryption | base64
     U2VjcmV0LUVUQ0QtRW5jcnlwdGlvbg==
   ```
 
   Create EncryptionConfiguration `/etc/kubernetes/enc/encryption.yaml` file:
-  ```
+  ```yaml
   ---
   apiVersion: apiserver.config.k8s.io/v1
   kind: EncryptionConfiguration
@@ -3425,7 +3417,7 @@ Examples:
   ```
 
   Open `/etc/kubernetes/manifests/kube-apiserver.yaml` file and put `encryption-provider-config` parameter. Also add volume and volumeMount, for example:
-  ```
+  ```yaml
   spec:
     containers:
     - command:
@@ -3448,17 +3440,17 @@ Examples:
     ...
   ```
   Wait till apiserver was restarted:
-  ```
+  ```shell
   watch crictl ps
   ```
 
   When `apiserver` will be re-created, we can encrypt all existing secrets. For example, let's do it fort all secrets in `one1` NS:
-  ```
+  ```shell
   kubectl -n one1 get secrets -o json | kubectl replace -f -
   ```
 
   To check you can do for example:
-  ```
+  ```shell
   ETCDCTL_API=3 etcdctl \
   --cert /etc/kubernetes/pki/apiserver-etcd-client.crt \
   --key /etc/kubernetes/pki/apiserver-etcd-client.key \
@@ -3484,27 +3476,27 @@ Examples:
 - <details><summary>Example_1: Create service accounts:</summary>
 
   First of all, let's check SA in `prod` namespace:
-  ```
+  ```shell
   k get sa -n prod
   ```
 
   To create a new service account:
-  ```
+  ```shell
   k create sa -n prod my-custom-sa
   ```
 
   Create clusterrole/role for our needs:
-  ```
+  ```shell
   k create clusterrole my-custom-role --verb create,delete --resource deployments
   ```
 
   Next, let's add some permissions for SA:
-  ```
+  ```shell
   k -n prod create rolebinding my-custom-rb --clusterrole my-custom-role --serviceaccount prod:my-custom-sa
   ```
 
   To check, you can use the next command:
-  ```
+  ```shell
   k auth can-i update deployments --as system:serviceaccount:prod:my-custom-sa -n prod
   k auth can-i list pods --as system:serviceaccount:prod:my-custom-sa -n prod
   ```
@@ -3514,7 +3506,7 @@ Examples:
 - <details><summary>Example_2: Working with SA: need to find witch SA uses for web3 PODs in qa namespace and fix/add list & delete for pods and deployments.</summary>
 
   Getting SA in NS:
-  ```
+  ```shell
   k get sa -n qa
   NAME           SECRETS   AGE
   default        0         4m24s
@@ -3522,7 +3514,7 @@ Examples:
   ```
 
   Need to find which resource attached into that SA, checking:
-  ```
+  ```shell
   k get rolebindings -n qa -o wide
   NAME           ROLE                AGE     USERS   GROUPS   SERVICEACCOUNTS
   my-custom-rb   Role/list-secrets   5m7s                     qa/my-custom-sa
@@ -3531,12 +3523,12 @@ Examples:
   ```
 
   Gotcha! It's rolebinding with `my-custom-rb` name. That `rb` uses `list-secrets` role. So, need to edit that role and put proper permissions:
-  ```
+  ```shell
   k edit -n qa role ist-secrets
   ```
 
   To check, use:
-  ```
+  ```shell
   k auth can-i list deployments --as system:serviceaccount:qa:my-custom-sa -n qa
   k auth can-i delete deployments --as system:serviceaccount:qa:my-custom-sa -n qa
   k auth can-i list po --as system:serviceaccount:qa:my-custom-sa -n qa
@@ -3548,12 +3540,12 @@ Examples:
 - <details><summary>Example_3: Using service account with POD/Deployment:</summary>
 
   Cretae a pod with `ipod` name and with image `nginx` name:
-  ```
+  ```shell
   k run ipod --image=nginx --dry-run=client -o yaml > ipod.yaml
   ```
 
   Add service account with `i-service-account` name:
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -3573,7 +3565,7 @@ Examples:
   ```
 
   Deploy pod:
-  ```
+  ```shell
   k apply -f ipod.yaml
   ```
 
@@ -3593,12 +3585,12 @@ Examples:
 - <details><summary>Example_1: Working with SecurityContext:</summary>
 
   Let's create a new POD with image name `redis` and store it into the file to work with:
-  ```
+  ```shell
   k run sec-con-pod --image=redis --dry-run=client -o yaml > sec-con-pod.yaml
   ```
 
   Now, let's add some security context into the specific POD only, for example:
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -3620,7 +3612,7 @@ Examples:
   ```
 
   Another way to use `securityContext` under containers. It will be used for all containers:
-  ```
+  ```yaml
   apiVersion: v1
   kind: Pod
   metadata:
@@ -3643,12 +3635,12 @@ Examples:
   ```
 
   Create POD with:
-  ```
+  ```shell
   k apply -f sec-con-pod.yaml
   ```
 
   Verification:
-  ```
+  ```shell
   k exec -ti sec-con-pod -- id
   
   uid=1000 gid=1000 groups=1000
@@ -3659,12 +3651,12 @@ Examples:
 - <details><summary>Example_2:  Working with Capabilities:</summary>
 
   Let's create a new POD with image name `redis` and store it into the file to work with:
-  ```
+  ```shell
   k run apa-pod --image=redis --dry-run=client -o yaml > sec-capa-pod.yaml
   ```
 
   Now, let's add some security context into the POD, for example:
-  ```
+  ```yaml
   kind: Pod
   metadata:
     creationTimestamp: null
@@ -3687,19 +3679,19 @@ Examples:
   ```
 
   Create POD with:
-  ```
+  ```shell
   k apply -f sec-capa-pod.yaml
   ```
 
   Verification:
-  ```
+  ```shell
   k exec -ti sec-capa-pod -- id
   
   uid=1000 gid=1000 groups=1000
   ```
 
   And, can check capabilities:
-  ```
+  ```shell
   k exec -ti sec-capa-pod -- sh -c "cat /proc/1/status | grep Cap"
   ```
 
@@ -3723,7 +3715,7 @@ Examples:
 - <details><summary>Example_1: Create default deny networking policy with <b>deny-all</b> name in <b>monitoring</b> namespace:</summary>
   
   For example:
-  ```
+  ```yaml
   ---
   apiVersion: networking.k8s.io/v1
   kind: NetworkPolicy
@@ -3742,7 +3734,7 @@ Examples:
 - <details><summary>Example_2: Create networking policy with <b>api-allow</b> name and create a restriction access to <b>api-allow</b> application that has deployed on <b>default</b> namespace and allow access only from <b>app2</b> pods:</summary>
   
   For example:
-  ```
+  ```yaml
   ---
   kind: NetworkPolicy
   apiVersion: networking.k8s.io/v1
@@ -3764,7 +3756,7 @@ Examples:
 - <details><summary>Example_3: Define an allow-all policy which overrides the deny all policy on <b>default</b> namespace:</summary>
   
   For example:
-  ```
+  ```yaml
   ---
   apiVersion: networking.k8s.io/v1
   kind: NetworkPolicy
@@ -3783,9 +3775,9 @@ Examples:
 </details>
 
  - <details><summary>Example_4: Create default deny networking policy for ingress only. Use netpol in <b>monitoring</b> namespace:</summary>
-  
+
   For example:
-  ```
+  ```yaml
   ---
   apiVersion: networking.k8s.io/v1
   kind: NetworkPolicy
@@ -3803,7 +3795,7 @@ Examples:
 - <details><summary>Example_5: Create default deny networking policy for egress only. Use netpol in <b>monitoring</b> namespace:</summary>
   
   For example:
-  ```
+  ```yaml
   ---
   apiVersion: networking.k8s.io/v1
   kind: NetworkPolicy
@@ -3832,17 +3824,17 @@ Examples:
 - <details><summary>Example_1: Service with NodePort:</summary>
 
   Creating a new POD:
-  ```
+  ```shell
   k run redis --image=redis:alpine -ltier=db
   ```
 
   Now, create a `redis-service` service to expose the redis application within the cluster on port `6379`:
-  ```
+  ```shell
   k expose pod redis --port=6379 --name redis-service
   ```
 
   Also, you can create service by `kubectl` command:
-  ```
+  ```shell
   k create service nodeport redis --tcp=6379:6379 --node-port=30008 --dry-run=client -o yaml
   ```
 
@@ -3851,7 +3843,7 @@ Examples:
 - <details><summary>Example_2: Service with ClusterIP:</summary>
 
   Create a pod called `httpd` using the `httpd:alpine` image in the default namespace. Next, create a `service` of type `ClusterIP` by the same name (httpd). The target port for the service should be `80`:
-  ```
+  ```shell
   kubectl run httpd --image=httpd:alpine --port=80 --expose
   ```
 
@@ -3860,17 +3852,17 @@ Examples:
 - <details><summary>Example_3: Service with LoadBalancer:</summary>
 
   Creating a new POD:
-  ```
+  ```shell
   k run redis --image=redis:alpine -ltier=db
   ```
 
   Generate svc template:
-  ```
+  ```shell
   k expose pod redis --port=6379 --name redis-service --dry-run=client -o yaml > redis-service.yaml
   ```
 
   Edit file with svc and change:
-  ```
+  ```yaml
   apiVersion: v1
   kind: Service
   metadata:
@@ -3894,7 +3886,7 @@ Examples:
   ```
 
   Also, you can create service by `kubectl` command:
-  ```
+  ```shell
   k create service nodeport redis-service --tcp=6379:6379 --node-port=30009 --dry-run=client -o yaml
   ```
 
@@ -3914,12 +3906,12 @@ Examples:
 - <details><summary>Example_1: Create Ingress with Nginx:</summary>
 
   Get ingress in `app-space` namespace:
-  ```
+  ```shell
   k get ingress -n app-space
   ```
 
   Congig file:
-  ```
+  ```yaml
   apiVersion: networking.k8s.io/v1
   kind: Ingress
   metadata:
@@ -3946,29 +3938,29 @@ Examples:
                 number: 8080
           path: /stream
           pathType: Prefix
-   ```
+  ```
 
    Apply it:
-   ```
+   ```shell
    k apply -f ingress-wear-watch.yaml
    ```
 
   Also, you can generate ingress through CLI, let's get another example:
-  ```
+  ```shell
   k create ingress ingress-app1 --class=nginx --rule="*/*=app1-svc:80" --annotation="nginx.ingress.kubernetes.io/rewrite-target=/" --dry-run=client -o yaml > ingress-app1.yaml
   ```
 
   Apply the config:
-  ```
+  ```shell
   k apply -f ingress-app1.yaml
-  ``` 
+  ```
 
 </details>
 
 - <details><summary>Example_2: Create ingress with <b>ingress-app1</b> name in <b>app1</b> namespace (with TLS):</summary>
   
   Example:
-  ```
+  ```yaml
   ---
   apiVersion: networking.k8s.io/v1
   kind: Ingress
@@ -3997,7 +3989,7 @@ Examples:
 
   **NOTE:** You should create the needed <b>local-domain-tls</b> secret for Ingress with certifications:
   
-  ```
+  ```shell
   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout cert.key -out cert.crt -subj "/CN=local.domail.name/O=local.domail.name"
   kubectl -n app1 create secret tls local-domain-tls --key cert.key --cert cert.crt
   ```
@@ -4007,23 +3999,23 @@ Examples:
 - <details><summary>Example_3: Create Ingress with Traefik:</summary>
 
   Create a new NS:
-  ```
+  ```shell
   kubectl create namespace traefik
   ```
 
   Add repo:
-  ```
+  ```shell
   helm repo add traefik https://helm.traefik.io/traefik
   helm repo update
   ```
 
   You can use the following command to search for the latest available version of the Traefik Helm chart:
-  ```
+  ```shell
   helm search repo traefik/traefik --versions
   ```
 
   Install Traefik ingress controller in Kubernetes:
-  ```
+  ```shell
   helm install traefik  \
     -n traefik \
     --set dashboard.enabled=true \
@@ -4031,12 +4023,12 @@ Examples:
   ```
 
   Exposing the Traefik dashboard:
-  ```
+  ```shell
   kubectl port-forward -n traefik $(kubectl get pods -n traefik --selector "app.kubernetes.io/name=traefik" --output=name) 9000:9000
   ```
 
   An example of configuration (Deployment, Service and Ingress):
-  ```
+  ```yaml
   ---
   apiVersion: apps/v1
   kind: Deployment
@@ -4058,8 +4050,7 @@ Examples:
             image: ravindrasingh6969/my-app:latest
             ports:
               - containerPort: 80
-
-
+  
   ---
   apiVersion: v1
   kind: Service
@@ -4075,8 +4066,7 @@ Examples:
       - protocol: TCP
         port: 80
         targetPort: 80
-
-
+  
   ---
   apiVersion: networking.k8s.io/v1
   kind: Ingress
@@ -4100,12 +4090,12 @@ Examples:
               port:
                 number: 80
   ```
-
+  
   Exposing the service:
-  ```
+  ```shell
   k port-forward -n default services/app-service --address=0.0.0.0 8888:80
   ```
-
+  
   Open browser on `localhost:8888`
 
 </details>
@@ -4149,7 +4139,7 @@ Examples:
 
 Created and maintained by:
 - [Vitalii Natarov](https://github.com/SebastianUA). An email: [vitaliy.natarov@yahoo.com](vitaliy.natarov@yahoo.com).
-- Thanks [Petro Diachenko](mehanic2000@gmail.com) for helps in that materials.
+- Thanks Petro Diachenko [mehanic2000@gmail.com](mehanic2000@gmail.com) for helps in that materials.
 
 
 # License
