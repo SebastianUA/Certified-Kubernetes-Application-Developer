@@ -68,8 +68,8 @@ Here are some of the commonly used formats:
 
 Configure the Kubectl autocomplete and the `alias k=kubectl`:
 ```shell
-source <(kubectl completion bash)  setup autocomplete in bash into the current shell, bash-completion package should be installed first.
-echo "source <(kubectl completion bash)" >> ~/.bashrc  add autocomplete permanently to your bash shell.
+source <(kubectl completion bash)  # setup autocomplete in bash into the current shell, bash-completion package should be installed first.
+echo "source <(kubectl completion bash)" >> ~/.bashrc  # add autocomplete permanently to your bash shell.
 ```
 
 NOTE: If you use `ZSH` or another shell, modify the correct path to configuration if so.
@@ -418,8 +418,7 @@ Examples:
     containers:
      # Main application container
     - name: app-container
-       Simple application: write the current date
-       to the log file every five seconds
+      # Simple application: write the current date to the log file every five seconds
       image: alpine  alpine is a simple Linux OS image
       command: ["/bin/sh"]
       args: ["-c", "while true; do date >> /var/log/app.txt; sleep 5;done"]
@@ -2287,6 +2286,11 @@ Examples:
   kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
   ```
 
+  If you have HA (High availability) cluster, use this:
+  ```shell
+  kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/high-availability.yaml
+  ```
+
   Simple check:
   ```shell
   kubectl get --raw /apis/metrics.k8s.io/v1beta1/nodes
@@ -2332,6 +2336,16 @@ Examples:
   k logs --since=1m deployments/nginx
   ```
 
+  Get log from specific container if you have multiple container inside the POD:
+  ```
+  k logs my-pod -c my-container-1 --tail=10
+  ```
+
+  If you want to get all logs from all containers inside the POD, you can use:
+  ```
+  k logs my-pod --all-containers=true
+  ```
+
 </details>
 
 **Useful official documentation**
@@ -2360,6 +2374,16 @@ Examples:
   Get logs newer than a relative duration like `1h`:
   ```shell
   k logs --since=1m deployments/nginx
+  ```
+
+  Get log from specific container if you have multiple container inside the POD:
+  ```
+  k logs my-pod -c my-container-1 --tail=10
+  ```
+
+  If you want to get all logs from all containers inside the POD, you can use:
+  ```
+  k logs my-pod --all-containers=true
   ```
 
 </details>
@@ -2392,6 +2416,11 @@ Examples:
 
   Where:
   - `fbb80dac7429e` - ID of container.
+
+</details>
+
+- <details><summary>Example_4: Check logs on node(s):</summary>
+
 
 </details>
 
