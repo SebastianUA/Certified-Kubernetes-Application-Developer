@@ -80,6 +80,14 @@ alias k=kubectl
 complete -F __start_kubectl k
 ```
 
+## Install Kubernetes cluster in Unix/Linux
+
+First of all, getting `multipass` from official site:
+- [Install on Linux](https://multipass.run/install#linux).
+- [Install on MacOS](https://multipass.run/download/macos).
+
+In [hands-on/00_Installers](https://github.com/SebastianUA/Certified-Kubernetes-Application-Developer/tree/main/hands-on/00_Installers) folder you can find some simple installers. For now, it's available only for MacOS.
+
 
 # Structure of certification
 
