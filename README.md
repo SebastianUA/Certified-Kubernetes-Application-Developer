@@ -37,6 +37,7 @@ Certified Kubernetes Application Developer (CKAD): Open new career doors – pro
 - `cm` = ConfigMaps
 - `cj` = CrobJobs
 - `ep` = Endpoints
+- `crd` = Customresourcedefinitions
 
 ## Get all resources in Kubernetes cluster
 
@@ -1001,7 +1002,148 @@ Examples:
 
 </details>
 
-- <details><summary>Example_3: Using Canary deployment (example_1):</summary>
+- <details><summary>Example_3: Using Blue/Green deployment (example_3):</summary>
+
+  Let's look at the option when one deployment has already been created and it's necessary to make a new deployment to use the "Blue-Green" approach. This time, let's get deploy:
+  ```shell
+  k get deploy
+  NAME           READY   UP-TO-DATE   AVAILABLE   AGE
+  wonderful-v1   4/4     4            4           28s
+  ```
+
+  Then, save this `wonderful-v1` deploy to file, for example:
+  ```shell
+   k get deploy wonderful-v1 -o yaml > wonderful-v1.yaml
+  ```
+
+  Open the file and delete no needed lines and the file should looks like:
+  ```shell
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app: wonderful
+    name: wonderful-v1
+    namespace: default
+  spec:
+    replicas: 4
+    selector:
+      matchLabels:
+        app: wonderful
+        version: v1
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        labels:
+          app: wonderful
+          version: v1
+      spec:
+        containers:
+        - image: httpd:alpine
+          imagePullPolicy: IfNotPresent
+          name: httpd
+          resources: {}
+        restartPolicy: Always
+        securityContext: {}
+  ```
+
+  Create a new Deployment `wonderful-v2` which uses image `nginx:alpine` with `4` replicas. It's Pods should have labels - `app: wonderful` and `version: v2`.
+  NOTE: The `wonderful-v1` app has a deployment with image `httpd:alpine`, but should be switched over to `nginx:alpine`. Once all new Pods are running, change the selector label of Service `wonderful` to `version: v2`. Finally scale down Deployment `wonderful-v1` to `0` replicas.
+
+  So, make a copy of the file to have a backup:
+  ```shell
+  cp wonderful-v1.yaml wonderful-v2.yaml
+  ```
+
+  Edit `wonderful-v2.yaml` file and adopt it for `v2` version of the deployment:
+  ```shell
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app: wonderful
+    name: wonderful-v2
+    namespace: default
+  spec:
+    replicas: 4
+    selector:
+      matchLabels:
+        app: wonderful
+        version: v2
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        labels:
+          app: wonderful
+          version: v2
+      spec:
+        containers:
+        - image: nginx:alpine
+          imagePullPolicy: IfNotPresent
+          name: httpd
+          resources: {}
+        restartPolicy: Always
+        securityContext: {}
+  ```
+
+  Apply a new `v2` deployment:
+  ```shell
+  k apply -f wonderful-v2.yaml
+  ```
+
+  Get deployemnts:
+  ```shell
+  k get deployments.apps 
+  NAME           READY   UP-TO-DATE   AVAILABLE   AGE
+  wonderful-v1   4/4     4            4           15m
+  wonderful-v2   4/4     4            4           11s
+  ``` 
+
+  Now, switch traffic to `v2` and adopt it to use a new app:
+  ```shell
+  k edit svc wonderful
+  ```
+
+  The service should be like the following:
+  ```shell
+  apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: wonderful
+    name: wonderful
+    namespace: default
+  spec:
+    ports:
+    - nodePort: 30080
+      port: 80
+      protocol: TCP
+      targetPort: 80
+    selector:
+      app: wonderful
+      version: v2
+    sessionAffinity: None
+    type: NodePort
+  status:
+    loadBalancer: {}
+  ```
+
+  And, scale down old version:
+  ```
+  k scale deploy wonderful-v1 --replicas=0
+  ```
+
+</details>
+
+- <details><summary>Example_4: Using Canary deployment (example_1):</summary>
 
   I would like to create `NS`:
   ```shell
@@ -1211,7 +1353,7 @@ Examples:
 
 </details>
 
-- <details><summary>Example_4: Using Canary deployment (example_2):</summary>
+- <details><summary>Example_5: Using Canary deployment (example_2):</summary>
 
   The full stack (primary-deployment + canary-deployment + service) in one `canary-deployment.yaml` file:
   ```yaml
@@ -1366,7 +1508,120 @@ Examples:
 
 </details>
 
-- <details><summary>Example_5: Using Recreate deployment (example_1):</summary>
+- <details><summary>Example_6: Using Canary deployment (example_3):</summary>
+
+  Let's look at the option when one deployment has already been created and it's necessary to make a new deployment to use the "Canary" approach. This time, let's get deploy:
+  ```shell
+  k get deploy
+  NAME           READY   UP-TO-DATE   AVAILABLE   AGE
+  wonderful-v1   10/10   10           10          3m49s
+  ```
+
+  Then, save this `wonderful-v1` deploy to file, for example:
+  ```shell
+   k get deploy wonderful-v1 -o yaml > wonderful-v1.yaml
+  ```
+
+  Open the file and delete no needed lines and the file should looks like:
+  ```shell
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app: wonderful
+    name: wonderful-v1
+    namespace: default
+  spec:
+    replicas: 10
+    selector:
+      matchLabels:
+        app: wonderful
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: wonderful
+      spec:
+        containers:
+        - image: httpd:alpine
+          imagePullPolicy: IfNotPresent
+          name: httpd
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+  ```
+
+  The app has a Deployment with image `httpd:alpine`, but should be switched over to `nginx:alpine`.
+
+  The switch should not happen fast or automatically, but using the Canary approach:
+  - 20% of requests should hit the new image
+  - 80% of requests should hit the old image
+
+  For this create a new Deployment `wonderful-v2` which uses image `nginx:alpine`. The total amount of Pods of both Deployments combined should be 10.
+
+  Copy the deployment:
+  ```shell
+  cp wonderful-v1.yaml wonderful-v2.yaml
+  ```
+
+  Then, open a new deployment (`wonderful-v2.yaml` file) and make changes. Something like:
+  ```shell
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app: wonderful
+    name: wonderful-v2
+    namespace: default
+  spec:
+    replicas: 2
+    selector:
+      matchLabels:
+        app: wonderful
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: wonderful
+      spec:
+        containers:
+        - image: nginx:alpine
+          imagePullPolicy: IfNotPresent
+          name: httpd
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+  ```
+
+  Apply the deployment:
+  ```shell
+  k apply -f wonderful-v2.yaml
+  ```
+
+  Edit `wonderful-v1` deployment and scale-down pods to `8`. Manual or through:
+  ```shell
+  k scale deployment wonderful-v1 --replicas=8
+  ```
+
+</details>
+
+- <details><summary>Example_7: Using Recreate deployment (example_1):</summary>
 
   For exapmle, open `web-server-recreate-deployment.yaml` file and put the next data:
   ```yaml
@@ -1407,7 +1662,7 @@ Examples:
 
 </details>
 
-- <details><summary>Example_6: Using Rollingupdate deployment (example_1):</summary>
+- <details><summary>Example_8: Using Rollingupdate deployment (example_1):</summary>
 
   For exapmle, open `web-server-rollingupdate-deployment.yaml` file and put the next data:
   ```yaml
@@ -1685,14 +1940,21 @@ Examples:
   helm uninstall drupal
   ```
 
+  NOTE: Use `-n NAMESPACE` if the release has deployed to a specific one.
+
   To download some release and store it on host you can use the next command:
   ```shell
-  helm pull --untar  bitnami/apache
+  helm pull --untar bitnami/apache
   ```
 
   To deploy your release:
   ```shell
   helm install mywebapp ./apache
+  ```
+
+  To write the list of all Helm releases in the cluster into `/root/releases` file, for example:
+  ```shell
+  helm ls -A > /root/releases
   ```
 
 </details>
@@ -2518,6 +2780,16 @@ Examples:
   kubectl get op
   ```
 
+  To get a list of all installed CRDs you can with the next command:
+  ```shell
+  k get crd
+  ```
+
+  To delete crd, use:
+  ```shell
+  k delete crd operator-sample
+  ```
+
 </details>
 
 **Useful official documentation**
@@ -3065,8 +3337,6 @@ Examples:
     echo "username=user" >> creds.txt
     echo "password=password" >> creds.txt
     echo "host=localhost" >> creds.txt
-    
-    k create cm my-cm2 -n prod --from-file=creds=creds.txt
     ```
 
     NOTE: An example, of `creds.txt` file:
@@ -3074,6 +3344,11 @@ Examples:
     username=user
     password=password
     host=localhost
+    ```
+
+    Now, create configmap from file:
+    ```shell
+    k create cm my-cm2 -n prod --from-file=creds=creds.txt
     ```
 
     To get data, you can use:
@@ -3112,7 +3387,7 @@ Examples:
   my-cm2             1      5m59s
   ```
 
-  Create Pod:
+  Create Pod and save it into file:
   ```shell
   k run env-pod-vars -n prod --image=nginx --dry-run=client -o yaml > env-pod-vars.yaml
   ```
