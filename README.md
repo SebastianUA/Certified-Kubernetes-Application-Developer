@@ -101,25 +101,23 @@ Examples:
 
   An example of Dockerfile:
   ```dockerfile
-  FROM ubuntu
-  MAINTAINER Vitalii <vitaliy.natarov@yahoo.com>
-  
-  RUN \
-    add-apt-repository -y ppa:chris-lea/redis-server && \
-    apt-get update && \
-    apt-get -y install \
-            redis-server && \
-    rm -rf /var/lib/apt/lists/*
-  
-  RUN rm /usr/sbin/policy-rc.d
-  CMD ["/usr/bin/redis-server"]
-  
-  EXPOSE 6379
+  FROM alpine
+
+  LABEL MAINTAINER="vitaliy.natarov@yahoo.com"
+
+  CMD ["ping", "google.com"]
   ```
 
   To build a new image, you can use:
   ```shell
   docker build Dockerfile -t my-custom-image
+  ```
+
+  Or to use multiple platforms:
+  ```shell
+  docker buildx create --name container-builder --driver docker-container --use --bootstrap
+  docker buildx use container-builder
+  docker buildx build -t my-custom-image --platform=linux/amd64,linux/arm64 -f ./Dockerfile . --load
   ```
 
   If you want to add environment variables:
@@ -138,25 +136,25 @@ Examples:
 
   An example of Dockerfile:
   ```dockerfile
-  FROM ubuntu
-  MAINTAINER Vitalii <vitaliy.natarov@yahoo.com>
-  
-  RUN \
-    add-apt-repository -y ppa:chris-lea/redis-server && \
-    apt-get update && \
-    apt-get -y install \
-            redis-server && \
-    rm -rf /var/lib/apt/lists/*
-  
-  RUN rm /usr/sbin/policy-rc.d
-  CMD ["/usr/bin/redis-server"]
-  
-  EXPOSE 6379
+  FROM alpine
+
+  LABEL MAINTAINER="vitaliy.natarov@yahoo.com"
+
+  CMD ["ping", "google.com"]
   ```
 
   To build a new image, you can use:
   ```shell
-  podman build Dockerfile -t my-custom-image
+  podman build -f Dockerfile -t my-custom-image:v1
+  ```
+
+  Or to use multiple platforms:
+  ```shell
+  podman machine init
+  podman machine start
+  podman build -f ./Dockerfile -t my-custom-image --platform=linux/amd64,linux/arm64
+  podman machine stop
+  podman machine rm
   ```
 
   If you want to add environment variables:
@@ -189,6 +187,11 @@ Examples:
   To get jobs, use:
   ```shell
   k get jobs.batch
+  ```
+
+  Or, simple one:
+  ```shell
+  k get jobs
   ```
 
   Let's create a new job. Set `my-job-1` name:
@@ -225,9 +228,20 @@ Examples:
   - `completions`: Determines the desired number of successfully finished pods a Job should have. For example, if you set `completions` to `5`, Kubernetes will ensure that five Pods have completed successfully.
   - `activeDeadlineSeconds`: The activeDeadlineSeconds applies to the duration of the job, no matter how many Pods are created. Once a Job reaches activeDeadlineSeconds , all of its running Pods are terminated and the Job status will become type: Failed with reason: DeadlineExceeded."
 
+  NOTE: if you forget some parameter(s), you can use the next help:
+  ```shell
+  k explain job.spec
+  k explain job.spec | grep parallelism
+  ```
+
   To delete job:
   ```shell
   k delete jobs.batch my-job-1
+  ```
+
+  Or, simple one:
+  ```shell
+  k delete jobs my-job-1
   ```
 
 </details>
@@ -237,6 +251,11 @@ Examples:
   To get cronjobs, use:
   ```shell
   k get cronjobs
+  ```
+
+  Or, simple one:
+  ```shell
+  k get cj
   ```
 
   Let's create a new job: 
@@ -286,6 +305,12 @@ Examples:
   - `concurrencyPolicy` - field is also optional. It specifies how to treat concurrent executions of a Job that is created by this CronJob. Allow (default): The CronJob allows concurrently running Jobs. Forbid: The CronJob does not allow concurrent runs; if it is time for a new Job run and the previous Job run hasn't finished yet, the CronJob skips the new Job run. Also note that when the previous Job run finishes, .spec.startingDeadlineSeconds is still taken into account and may result in a new Job run. Replace: If it is time for a new Job run and the previous Job run hasn't finished yet, the CronJob replaces the currently running Job run with a new Job run.
   - `successfulJobsHistoryLimit` - This field specifies the number of successful finished jobs to keep. The default value is 3. Setting this field to 0 will not keep any successful jobs.
   - `failedJobsHistoryLimit` - This field specifies the number of failed finished jobs to keep. The default value is 1. Setting this field to 0 will not keep any failed jobs.
+
+  NOTE: if you forget some parameter(s), you can use the next help:
+  ```shell
+  k explain cronjob.spec.jobTemplate.spec
+  k explain cj.spec.jobTemplate.spec | grep parallelism
+  ```
 
   To delete job:
   ```shell
@@ -1734,6 +1759,11 @@ Examples:
 
 Examples:
 - <details><summary>Example_1: Using rolling updates (deprecated way):</summary>
+
+  Create file with deployment and store it as `deploy-definition.yaml`, for example:
+  ```
+  k create deployment my-deploy-1 --image=httpd:2.4 --port=80 --dry-run=client -o yaml > deploy-definition.yaml
+  ```
 
   1. Make changes in YAML file and run:
     ```shell
