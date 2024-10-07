@@ -37,11 +37,11 @@ Certified Kubernetes Application Developer (CKAD): Open new career doors – pro
 - `cm` = ConfigMaps
 - `cj` = CrobJobs
 - `ep` = Endpoints
-- `crd` = Customresourcedefinitions
+- `crd` = Custom Resource Definitions
 
 ## Get all resources in Kubernetes cluster
 
-To get all resources in all namespaces: 
+To get all resources in all namespaces:
 
 ```shell
 kubectl get all --all-namespaces
@@ -97,7 +97,9 @@ In [hands-on/00_Installers](https://github.com/SebastianUA/Certified-Kubernetes-
 ### Define, build and modify container images
 
 Examples:
-- <details><summary>Example_1: Build and modify container images with Docker:</summary>
+- <details><summary>Example_1: Build and modify container images with Docker (not for the exam):</summary>
+
+  To install Docker, use this [Docker official link](https://docs.docker.com/engine/install/).
 
   An example of Dockerfile:
   ```dockerfile
@@ -134,6 +136,8 @@ Examples:
 
 - <details><summary>Example_2: Build and modify container images with Podman:</summary>
 
+  To install Podman, use this [Podman official link](https://podman.io/docs/installation).
+
   An example of Dockerfile:
   ```dockerfile
   FROM alpine
@@ -143,6 +147,12 @@ Examples:
   CMD ["ping", "google.com"]
   ```
 
+  Start `podman` machine:
+  ```shell
+  podman machine init
+  podman machine start
+  ```
+
   To build a new image, you can use:
   ```shell
   podman build -f Dockerfile -t my-custom-image:v1
@@ -150,11 +160,7 @@ Examples:
 
   Or to use multiple platforms:
   ```shell
-  podman machine init
-  podman machine start
   podman build -f ./Dockerfile -t my-custom-image --platform=linux/amd64,linux/arm64
-  podman machine stop
-  podman machine rm
   ```
 
   If you want to add environment variables:
@@ -162,9 +168,27 @@ Examples:
   podman run -e ENV=dev my-custom-image
   ```
 
+  If you want set custom name and open ports:
+  ```shell
+  podman run -d -p 80:80 --name=iPod my-custom-image:v1
+  ```
+
+  To get image, use:
+  ```shell
+  podman images
+  podman images my-custom-image
+  podman images -a
+  ```
+
   To push image, use:
   ```shell
   podman push my-custom-image
+  ```
+
+  Stop & remove Podman machine:
+  ```shell
+  podman machine stop
+  podman machine rm
   ```
 
 </details>
@@ -196,10 +220,10 @@ Examples:
 
   Let's create a new job. Set `my-job-1` name:
   ```shell
-  k create job my-job-1 --image=nginx --dry-run=client -o yaml > my-job-1.yaml
+  k create job my-job-1 --image=nginx --dry-run=client -o yaml -- date > my-job-1.yaml
   ```
 
-  Open file for edit and let's set `backoffLimit` to `25`. Also, set `parallelism` to `4`:
+  Open file for edit and let's set `backoffLimit` to `4`. Also, set `parallelism` to `4`. Also, set clean up finished jobs after 300 seconds:
   ```yaml
   apiVersion: batch/v1
   kind: Job
@@ -207,8 +231,10 @@ Examples:
     creationTimestamp: null
     name: my-job-1
   spec:
-    backoffLimit: 25
+    backoffLimit: 4
     parallelism: 4
+    completions: 4
+    ttlSecondsAfterFinished: 300
     template:
       metadata:
         creationTimestamp: null
@@ -216,6 +242,8 @@ Examples:
         containers:
         - image: nginx
           name: my-job-1
+          command:
+          - date
           resources: {}
         restartPolicy: Never
   status: {}
@@ -232,6 +260,12 @@ Examples:
   ```shell
   k explain job.spec
   k explain job.spec | grep parallelism
+  k explain job.spec | grep -Ei "limit|tls|param|comp|active"
+  ```
+
+  To get logs, use:
+  ```shell
+  k logs job/my-job-1
   ```
 
   To delete job:
@@ -263,7 +297,7 @@ Examples:
   k create cronjob my-cronjob-1 --image=nginx --schedule='00 00 * * *' --dry-run=client -o yaml > my-cronjob-1.yaml
   ```
 
-  Set `my-cronjob-1` name. Set `backoffLimit` to `25`. Also, set `parallelism` to `4` and set `completions` to `3`:
+  Set `my-cronjob-1` name. Set `backoffLimit` to `25`. Also, set `parallelism` to `3` and set `completions` to `3`. Set additional parameters up to your choose:
   ```yaml
   apiVersion: batch/v1
   kind: CronJob
@@ -317,6 +351,11 @@ Examples:
   k delete cronjobs my-cronjob-1
   ```
 
+  To delete all Jobs that have successfully completed:
+  ```shell
+  k delete job --field-selector=status.successful=1
+  ```
+
 </details>
 
 - <details><summary>Example_3: Create Job from CronJob:</summary>
@@ -338,9 +377,19 @@ Examples:
   k apply -f my-job-from-cronjob.yaml
   ```
 
+  NOTE: If you don't modify job, you can skip `--dry-run=client -oyaml > my-job-from-cronjob.yaml` and use:
+  ```shell
+  k create job my-job-from-cronjob --from=cronjob/my-cronjob-1
+  ```
+
   Get job:
   ```shell
   k get jobs
+  ```
+
+  To delete job:
+  ```shell
+  k delete jobs my-job-from-cronjob
   ```
 
 </details>
@@ -402,14 +451,19 @@ Examples:
   k edit deploy <deployment_name>
   ```
 
+  Create one a new deployment:
+  ```shell
+  k create deploy <deployment_name>
+  ```
+
   Delete a deploy:
   ```shell
   k delete deploy <deployment_name> -n <namespace_name>
   ```
 
-  Create one a new deployment:
+  Check the history of deployments:
   ```shell
-  k create deploy <deployment_name>
+  k rollout history deployment <deployment_name> -n <namespace_name>
   ```
 
   See the rollout status of a deployment:
@@ -1760,7 +1814,12 @@ Examples:
 Examples:
 - <details><summary>Example_1: Using rolling updates (deprecated way):</summary>
 
-  Create file with deployment and store it as `deploy-definition.yaml`, for example:
+  Let's create a new deployment:
+  ```shell
+  kubectl create deployment my-deploy-1 --image=httpd:2.4
+  ```
+
+  Or, create a file with deployment and save it as `deploy-definition.yaml`, for an example:
   ```
   k create deployment my-deploy-1 --image=httpd:2.4 --port=80 --dry-run=client -o yaml > deploy-definition.yaml
   ```
@@ -1769,24 +1828,20 @@ Examples:
     ```shell
     k apply -f deploy-definition.yaml
     ```
-  2. Update only needed param, for example - `image` only:
+  2. Update only needed param, for example - `image` only (Use the next command `k set image deployment/<your_deployment> <container_name>=<image>:<image_tag> --record`):
     ```shell
-    k set image deployment/my-deploy-1 nginx-container=nginx:1.19 --record
+    k set image deployment/my-deploy-1 httpd=nginx:1.19 --record
     ```
 
     Where:
     - `my-deploy-1` - The deployment name.
-    - `nginx-container` - The container name.
+    - `httpd` - The container name.
     - `nginx:1.19` - The needed image name with tag.
 
-  Let's create a new deployment:
-  ```shell
-  kubectl create deployment my-deploy-1 --image=nginx:1.17
-  ```
 
   Let's update image:
   ```shell
-  kubectl set image deployment my-deploy-1 nginx=nginx:1.18 --record
+  kubectl set image deployment my-deploy-1 httpd=nginx:1.18 --record
   ```
 
   NOTE: Flag `--record` has been deprecated, `--record` will be removed in the future
@@ -1794,6 +1849,16 @@ Examples:
   Getting events from deployment:
   ```shell
   k describe deploy my-deploy-1
+  ```
+
+  Get the history of deployment:
+  ```shell
+  k rollout history deployment my-deploy-1
+  ```
+
+  Make reverting:
+  ```shell
+  k rollout undo deployment my-deploy-1 --to-revision=4
   ```
 
 </details>
@@ -2719,8 +2784,57 @@ Examples:
 
 </details>
 
-- <details><summary>Example_4: Check logs on node(s):</summary>
+- <details><summary>Example_4: Check logs on node(s) - Node-Level Logs (e.g., Kubelet, Container Runtime, System Logs):</summary>
 
+  To access node-level logs, like logs from the Kubelet or container runtime (e.g., Docker, containerd), you generally need access to the node itself via SSH or similar. Jump into the host, for example:
+  ```shell
+  ssh node01
+  ```
+
+  Kubelet logs:
+  ```shell
+  journalctl -u kubelet -f
+  ```
+
+  Container runtime logs (containerd):
+  ```shell
+  journalctl -u containerd -f
+  ```
+
+  DaemonSet for Node Logs Collection. If you need to collect logs from every node, you can deploy a DaemonSet to run a log collection agent (e.g., Fluentd or Filebeat) on every node. Here's an example of creating a DaemonSet for log collection:
+  ```yaml
+  apiVersion: apps/v1
+  kind: DaemonSet
+  metadata:
+    name: fluentd
+    namespace: kube-system
+  spec:
+    selector:
+      matchLabels:
+        name: fluentd
+    template:
+      metadata:
+        labels:
+          name: fluentd
+      spec:
+        containers:
+        - name: fluentd
+          image: fluent/fluentd-kubernetes-daemonset:v1.11.5-debian
+          volumeMounts:
+          - name: varlog
+            mountPath: /var/log
+          - name: varlibdockercontainers
+            mountPath: /var/lib/docker/containers
+        volumes:
+        - name: varlog
+          hostPath:
+            path: /var/log
+        - name: varlibdockercontainers
+          hostPath:
+            path: /var/lib/docker/containers
+  ```
+
+  This will ensure log collection across all nodes in the cluster.
 
 </details>
 
@@ -3990,7 +4104,7 @@ Examples:
 
 </details>
 
-- <details><summary>Example_2:  Working with Capabilities:</summary>
+- <details><summary>Example_2: Working with Capabilities:</summary>
 
   Let's create a new POD with image name `redis` and store it into the file to work with:
   ```shell
